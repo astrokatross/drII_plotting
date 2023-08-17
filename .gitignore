@@ -1,3 +1,4 @@
 plots/*
-**/*.fits
+**/GLEAMX*.fits
+aegean_testing/*fits
 aegean_testing/white_region_comp.reg
