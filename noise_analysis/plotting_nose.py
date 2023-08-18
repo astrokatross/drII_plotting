@@ -42,23 +42,13 @@ def fit_hists(data, stdev = 1.0, nsig=1):
 # todo: make better savename and title 
 def plot_distribution(n, bin_centers, binss, gu, stdev, mean_rms=1.0, mean_bkg=0., title="", sigma=False,savenm=""):
 
+    tgu = copy.deepcopy(gu)
+    tgu.mean.value = mean_bkg
+    tgu.stddev.value = mean_rms
 
     if sigma is False:
-        tgu = copy.deepcopy(gu)
-        if args.bkgsub is False: 
-            tgu.mean.value = mean_bkg
-        else: 
-            tgu.mean.value = 0
-        tgu.stddev.value = mean_rms
-        nsig=1
         xlabel="Jy/beam"
     else:
-        tgu = copy.deepcopy(gu)
-        tgu.mean.value = 0
-        tgu.stddev.value = 1.
-
-        # stdev=1
-        nsig=5
         xlabel="$\sigma$"
 
 
@@ -77,7 +67,7 @@ def plot_distribution(n, bin_centers, binss, gu, stdev, mean_rms=1.0, mean_bkg=0
 
     ax.plot(np.linspace(xmin,xmax,1000),tgu(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE measured')
     ax.legend()
-    ax.set_title(f"Pixel distribution {title}")
+    ax.set_title(f"{title}")
     plt.savefig(f"noise_distribution_{savenm}.png")
 
 
@@ -91,8 +81,8 @@ if __name__ == "__main__":
     parser.add_argument(
         '--imagenm',
         type=str,
-        default="XG",
-        help="input image to plot the pxl distribution to (default=XG), not exclude the .fits to make easier for rms and bkg loading"
+        default="XG.fits",
+        help="Image name to import, if rms and bkg aren't specified, then will find rms and bkg for image of same name"
     )
     parser.add_argument(
         '--rms',
@@ -102,52 +92,59 @@ if __name__ == "__main__":
         '--bkg',
         help="See rms description, but it's for bkg default=imagenm_bkg.fits"
     )
-    parser.add_argument(
-        '--sigma',
-        default=False,
-        help="Are you using the sigma images or just raw pixels"
-    )
-    parser.add_argument(
-        '--stdev',
-        default=0.025,
-        help="the std for fitting, 0.25 for red, 0.025 for white, 1 for sigma"
-    )
-    parser.add_argument(
-        "--bkgsub",
-        default=False,
-        help="If using a bkgsub one, then doesn't update the gaus fit to bkgmean"
-    )
-    parser.add_argument(
-        '--savenm',
-        type=str,
-        default="",
-        help="output save name"
-    )
+
+
     args = parser.parse_args()
+    image = fits.getdata(f"{args.imagenm}")
+    imstring = args.imagenm.split(".")[0]
+    savenm_str = imstring.split("_")[1:]
 
     if args.rms:
         rms = fits.getdata(f"{args.rms}")
+        if "priorsub" in args.rms.split("_")[1:] and "priorsub" not in savenm_str:
+            savenm_str.append("priorsub")
+            imstring = args.imagenm.replace(".fits","_priorsub")
     else:
-        rms = fits.getdata(f"{args.imagenm}_rms.fits")
+        rms = fits.getdata(f"{imstring}_rms.fits")
     if args.bkg:
         bkg = fits.getdata(f"{args.bkg}")
     else:
-        bkg = fits.getdata(f"{args.imagenm}_bkg.fits")
+        bkg = fits.getdata(f"{imstring}_bkg.fits")
 
-    image = fits.getdata(f"{args.imagenm}.fits")
-    
-    
     mean_rms = np.nanmean(rms)
     mean_bkg = np.nanmean(bkg)
 
-    if args.sigma is False:
-        print("Sigma is false, raw pxl dist")
+    print(savenm_str)
+    sigma=False
+
+    if "red" in savenm_str:
+        stdev=0.02
         nsig=1
-        stdev=args.stdev
-        # stdev=0.25
-    else:
-        nsig=5
+    if "white" in savenm_str:
+        stdev=0.005
+        nsig=1
+    if "bkgsub" in savenm_str:
+        bkgsub=True
+        mean_bkg=0.
+    if "sigma" in savenm_str:
+        sigma = True
         stdev=1
+        nsig=5
+        mean_bkg = 0.
+        mean_rms = 1.
+        
+    
+    savenm_str = " ".join(savenm_str)
+    savenm_str = savenm_str.replace("priorsub","accurate noise")
+    savenm_str = savenm_str.replace("maked","sources masked")
+    savenm_str = savenm_str.replace("resid","sources subtracted")
+    savenm_str = savenm_str.replace("bkgsub","background subtracted")
+    savenm_str = savenm_str.replace("white","170-231MHz")
+    savenm_str = savenm_str.replace("red","72-103MHz")
+    savenm_str = savenm_str.replace("sigma","S/N image")
+
+
+    print(f"Processing: {savenm_str}")
 
     n, bin_centers, binss, gu = fit_hists(image,nsig=nsig,stdev=stdev)
 
@@ -159,8 +156,8 @@ if __name__ == "__main__":
         stdev=stdev,
         mean_rms=mean_rms, 
         mean_bkg=mean_bkg, 
-        title=args.imagenm, 
-        sigma=args.sigma,
-        savenm=args.savenm)
+        title=savenm_str, 
+        sigma=sigma,
+        savenm=imstring)
 
 
