@@ -38,8 +38,6 @@ def fit_hists(data, stdev = 1.0, nsig=1):
 
     return n, bin_centers, binss, gu 
 
-
-# todo: make better savename and title 
 def plot_distribution(n, bin_centers, binss, gu, stdev, mean_rms=1.0, mean_bkg=0., title="", sigma=False,savenm=""):
 
     tgu = copy.deepcopy(gu)
