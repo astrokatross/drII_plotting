@@ -116,8 +116,14 @@ if __name__ == "__main__":
     sigma=False
 
     if "red" in savenm_str:
-        stdev=0.02
-        nsig=1
+        if "MHz" in savenm_str[1]:
+            savenm_str = savenm_str[1:]
+            stdev=0.05
+            nsig=1
+        else: 
+            savenm_str[0] = "72-103MHz"
+            stdev=0.02
+            nsig=1
     if "white" in savenm_str:
         stdev=0.005
         nsig=1
@@ -134,11 +140,10 @@ if __name__ == "__main__":
     
     savenm_str = " ".join(savenm_str)
     savenm_str = savenm_str.replace("priorsub","accurate noise")
-    savenm_str = savenm_str.replace("maked","sources masked")
-    savenm_str = savenm_str.replace("resid","sources subtracted")
-    savenm_str = savenm_str.replace("bkgsub","background subtracted")
+    savenm_str = savenm_str.replace("maked","masked")
+    savenm_str = savenm_str.replace("resid","subtracted")
+    savenm_str = savenm_str.replace("bkgsub","bkg subtracted")
     savenm_str = savenm_str.replace("white","170-231MHz")
-    savenm_str = savenm_str.replace("red","72-103MHz")
     savenm_str = savenm_str.replace("sigma","S/N image")
 
 
