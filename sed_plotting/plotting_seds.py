@@ -67,5 +67,8 @@ def plot_sed(freq, flux, fluxerr, fit_params, coord_src, outpath):
     )
 
     fig.tight_layout()
-    fig.savefig(f"{outpath}/{coord_src}.png")
+    try: 
+        fig.savefig(f"{outpath}/{coord_src}.png")
+    except FileNotFoundError:
+        fig.savefig(f"./{coord_src}.png")
     plt.close(fig)

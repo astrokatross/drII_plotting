@@ -13,6 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt 
 import os
 from scipy.stats import chi2
+from matplotlib.ticker import ScalarFormatter
 
 __author__ = "Kat Ross"
 __date__ = "2023-04-14"
@@ -27,11 +28,11 @@ logger.setLevel(logging.INFO)
 plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
-    "font.size": 8,
-    "axes.titlesize": 8
+    "font.size": 10,
+    "axes.titlesize": 10
 })
 
-
+x_ticks=[80, 90, 100, 120, 130, 150, 200, 250]
 majorticklength=2.5
 minorticklength=2
 tickwidth=0.5
@@ -41,9 +42,36 @@ CHANSN = ['072_080MHz', '080_088MHz', '088_095MHz', '095_103MHz', '103_111MHz', 
  '126_134MHz', '139_147MHz', '147_154MHz', '154_162MHz', '162_170MHz', '170_177MHz', 
  '177_185MHz', '185_193MHz', '193_200MHz', '200_208MHz', '208_216MHz', '216_223MHz', '223_231MHz']
 
+VARCHANSN = [
+    "107",
+    "115",
+    "123",
+    "130",
+    "143",
+    "150",
+    "158",
+    "166",
+    "174",
+    "181",
+    "189",
+    "197",
+    "204",
+    "212",
+    "220",
+    "227",
+    ]
+
 GLEAMX_FREQS = np.array([np.mean([float(i) for i in name.replace('MHz','').split('_')[-2:]]) for name in CHANSN])
 GLEAMX_INT = [f'int_flux_{c}' for c in CHANSN]
 GLEAMX_ERR = [f'err_int_flux_{c}' for c in CHANSN]
+
+VAR_FREQS = np.array([float(c) for c in VARCHANSN])
+VARY1_INT = [f"S_{c}_yr1" for c in VARCHANSN]
+VARY2_INT = [f"S_{c}_yr2" for c in VARCHANSN]
+VARY1_RMS = [f"local_rms_{c}_yr1" for c in VARCHANSN]
+VARY2_RMS = [f"local_rms_{c}_yr2" for c in VARCHANSN]
+
+
 
 class source:
     def __init__(self, *args, **kwargs):
@@ -71,7 +99,7 @@ class source:
         return self._make_str(tex=True)
 
 
-def plot_sed(freq, flux, fluxerr, fit_params, coord_src, outpath):
+def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
     fig, ax = plt.subplots(1,1)
 
     nu = np.geomspace(
@@ -86,7 +114,7 @@ def plot_sed(freq, flux, fluxerr, fit_params, coord_src, outpath):
         yerr=fluxerr,
         ls='None',
         marker='.',
-        color="C6"
+        color="hotpink"
     )
 
     legend = False
@@ -100,7 +128,7 @@ def plot_sed(freq, flux, fluxerr, fit_params, coord_src, outpath):
                 nu,
                 power_law(nu, *fit_params),
                 ls='--',
-                color='C9',
+                color='hotpink',
                 label=f"Power-law, alpha {fit_params[1]:.3f}"
             )
         elif len(fit_params) == 3: 
@@ -108,15 +136,67 @@ def plot_sed(freq, flux, fluxerr, fit_params, coord_src, outpath):
                 nu,
                 curved_power_law(nu, *fit_params),
                 ls=':',
-                color='C4',
+                color='hotpink',
                 label=f'Curved power-law, q {fit_params[2]:.3f}'
             )
+    if args.var is not None: 
+        src_var_row = search_cat(src_row, args.varcat, search_radius=1*u.arcmin)
+        freq1, flux1, errflux1 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY1_INT, errs = VARY1_RMS, internal_scale=0.03, apply_mask=False)
+        freq2, flux2, errflux2 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY2_INT, errs = VARY2_RMS, internal_scale=0.03, apply_mask=False)
 
+    if args.var==1:
+        logger.debug("GOING TO PLOT FOR 2013")
+        ax.errorbar(
+        freq1,
+        flux1,
+        yerr=errflux1,
+        ls='None',
+        marker='.',
+        color="darkviolet",
+        alpha=0.5,
+        label="2013"
+        )
+    elif args.var==2:
+        logger.debug("GOING TO PLOT FOR 2014")
+        ax.errorbar(
+        freq2,
+        flux2,
+        yerr=errflux2,
+        ls='None',
+        marker='.',
+        color="mediumblue",
+        alpha=0.5,
+        label="2014"
+        )  
+    elif args.var==0:
+        logger.debug("GOING TO PLOT 2013,2014")
+        
+        ax.errorbar(
+        freq1,
+        flux1,
+        yerr=errflux1,
+        ls='None',
+        marker='.',
+        color="darkviolet",
+        alpha=0.5,
+        label="2013"
+        )
+        ax.errorbar(
+        freq2,
+        flux2,
+        yerr=errflux2,
+        ls='None',
+        marker='.',
+        color="mediumblue",
+        alpha=0.5,
+        label="2014"
+        )  
 
 
     if legend is True:
         ax.legend()
-
+    
+    coord_src = source(SkyCoord(src_row.ref_ra*u.deg, src_row.ref_dec*u.deg))
     ax.loglog()
     ax.set(
         xlabel='Frequency (MHz)',
@@ -129,10 +209,20 @@ def plot_sed(freq, flux, fluxerr, fit_params, coord_src, outpath):
     ax.tick_params(
         axis="both", which="minor", direction="in", length=minorticklength, width=tickwidth
     )
+    ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+    ax.xaxis.set_minor_formatter(ScalarFormatter(useMathText=True))
+    ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+    ax.yaxis.set_minor_formatter(ScalarFormatter(useMathText=True))
+    
     savenm = str(coord_src)
     savenm = savenm.replace(" ","_")
     fig.tight_layout()
-    fig.savefig(f"{outpath}/{savenm}.png")
+    try: 
+        fig.savefig(f"{outpath}/{savenm}.png")
+    except FileNotFoundError:
+        logger.debug(f"Couldnt save the sed because there's no folder: {outpath}, will just save here...")
+        fig.savefig(f"./{savenm}.png")
+
     plt.close(fig)
 
 
@@ -154,21 +244,92 @@ def create_source_name(row):
 
     return str(coord_src)
 
+def try_ransac_fit(freq, flux,err_flux,p0):
+    chi2 = np.zeros_like(freq)
+    for i in range(len(freq)):
+        idx2 = np.arange(0, len(freq))
+        idx2 = np.delete(idx2, i)
+        temp_freq = freq[idx2]
 
-# probs don't need unless i want to expand to do something useful.... 
-def read_catalogue(cat:str, source:source, colnames, search_radius = 1*u.degree, cat_ext = "fits"):
+        temp_model, covar_temp_model = curve_fit(power_law,temp_freq, flux[idx2],p0=p0,sigma=err_flux[idx2],absolute_sigma=True)
+        chi2[i] = np.sum(
+            ((flux[idx2] - power_law(temp_freq, *temp_model)) / err_flux[idx2])**2
+            )
 
+    return chi2
+
+
+
+
+def fit_pl(freq, flux, err_flux):
+    p0 = (np.median(flux), -0.8)
     try: 
-        cats = Table.read(cat, format=cat_ext).to_pandas()
-        catalogue = SkyCoord(cats.ref_ra, cats.ref_dec, frame="fk5", unit=u.deg)
-    except FileNotFoundError:
-        logger.debug("Can't find the catalogue you're trying to search!?")
-        return np.nan 
-    except: 
-        logger.debug("Can't make catalogue?")
-        return np.nan 
+        fit_res_pl = curve_fit(
+            power_law, 
+            freq, 
+            flux, 
+            p0=p0, 
+            sigma=err_flux,
+            absolute_sigma=True
+        )
+        best_p_pl, covar_pl = fit_res_pl
 
-    return cats
+        err_p_pl = np.sqrt(np.diag(covar_pl))
+        dof_pl = len(freq) - 2
+        chi2_pl = np.sum(
+            ((flux - power_law(freq, *best_p_pl)) / err_flux)**2
+            )
+        rchi2_pl = chi2_pl / dof_pl
+        ransac_chi2 = try_ransac_fit(freq,flux,err_flux,p0)
+        logger.debug(f"The ransac chi2 is: {ransac_chi2}")
+        if chi2_pl > chi2.ppf(0.999, dof_pl):
+            logger.debug(f"PL fit would've been set to none before any checks: {chi2_pl} > {chi2.ppf(0.999, dof_pl)}")
+            ransac_chi2 = try_ransac_fit(freq,flux,err_flux,p0)
+            logger.debug(f"The ransac chi2 is: {ransac_chi2}")
+            fit_pl = None
+            rchi2_pl = None
+            chi2_pl = None 
+        else: 
+            fit_pl = best_p_pl
+    except RuntimeError:
+        fit_pl =  None
+        rchi2_pl = np.inf 
+
+    return best_p_pl, chi2_pl, rchi2_pl
+
+def fit_cpl(freq, flux, err_flux):
+    try: 
+        p0 = (np.median(flux), -0.8, 0)
+        fit_res_cpl = curve_fit(
+            curved_power_law,
+            freq,
+            flux,
+            p0=p0,
+            sigma=err_flux,
+            absolute_sigma=True
+        )
+        best_p_cpl, covar_cpl = fit_res_cpl
+        err_p_cpl = np.sqrt(np.diag(covar_cpl))
+        dof_cpl = len(freq) - 3
+        chi2_cpl = np.sum(
+            ((flux - curved_power_law(freq, *best_p_cpl)) / err_flux)**2
+            )
+        rchi2_cpl = chi2_cpl / dof_cpl  
+        if chi2_cpl > chi2.ppf(0.99, dof_cpl):
+            logger.debug(f"CPL would've been set to none before any checks ")
+            fit_cpl = None
+            chi2_cpl = None
+            rchi2_cpl = None 
+        if np.abs(best_p_cpl[2]) < 0.2 or np.abs(best_p_cpl[2])/err_p_cpl[2] <3:
+            logger.debug(f"CPL would've been cut because the curvature was poor or flipped")
+            logger.debug(f"{round(np.abs(best_p_cpl[2]),3)}<0.2 or {np.abs(best_p_cpl[2])/err_p_cpl[2]} < 3")
+            fit_cpl = None 
+            rchi2_cpl = None
+            chi2_cpl = None
+    except RuntimeError:
+        fit_cpl = None
+        rchi2_cpl = np.inf  
+    return best_p_cpl, chi2_cpl, rchi2_cpl
 
 def read_fit_params(row,pl,cpl):
 
@@ -181,79 +342,76 @@ def read_fit_params(row,pl,cpl):
         logger.warning(f"Both params are none?? No model for {src_name}")
         logger.debug(f"Going to try fitting just a pl")
         freq, int_flux, err_flux = get_freq_flux_err(row)
-        p0 = (np.median(int_flux), -0.8)
-        try:
-            fit_res_pl = curve_fit(
-                power_law,
-                freq,
-                int_flux,
-                p0=p0,
-                sigma=err_flux,
-                absolute_sigma=True
-            )
-            best_p_pl, covar_pl = fit_res_pl
-            err_p_pl = np.sqrt(np.diag(covar_pl))
-            dof_pl = len(freq) - 2
-            chi2_pl = np.sum(
-                ((int_flux - power_law(freq, *best_p_pl)) / err_flux)**2
-                )
-            rchi2_pl = chi2_pl / dof_pl   
-        except RuntimeError:
-            fit_pl =  None
-            rchi2_pl = np.inf 
+        if len(freq) < 15:
+            logger.debug(f"Would've been cut from few freqs to fit: len(freq) = {len(freq)}")
+        best_p_pl, chi2_pl, rchi2_pl = fit_pl(freq, int_flux, err_flux)
+        best_p_cpl, chi2_cpl, rchi2_cpl = fit_cpl(freq, int_flux, err_flux)   
 
-        try: 
-            p0 = (np.median(int_flux), -0.8, 0)
-            fit_res_cpl = curve_fit(
-                curved_power_law,
-                freq,
-                int_flux,
-                p0=p0,
-                sigma=err_flux,
-                absolute_sigma=True
-            )
-            best_p_cpl, covar_cpl = fit_res_cpl
-            err_p_cpl = np.sqrt(np.diag(covar_cpl))
-            dof_cpl = len(freq) - 3
-            chi2_cpl = np.sum(
-                ((int_flux - curved_power_law(freq, *best_p_cpl)) / err_flux)**2
-                )
-            rchi2_cpl = chi2_cpl / dof_cpl            
-        except RuntimeError:
-            fit_cpl = None
-            rchi2_cpl = np.inf  
         
-        if rchi2_cpl < rchi2_pl:
+        logger.debug(f"Comparing the fits: rchi2_pl={rchi2_pl} vs rchi2_cpl={rchi2_cpl}")
+        if rchi2_cpl is None and rchi2_pl is not None: 
+            logger.debug(f"Only fit PL so using this as preferred!")
+            fit_params = [best_p_pl[0], best_p_pl[1]]
+        elif rchi2_pl is None and rchi2_cpl is not None: 
+            logger.debug(f"Only fit CPL so using this as preferred!")
+            fit_params = [best_p_cpl[0], best_p_cpl[1], best_p_cpl[2]]
+        elif rchi2_cpl is None and rchi2_pl is None: 
+            logger.warning(f"Tried to fit both but failed both? Don't know what you want from me. ")
+            fit_params = None 
+        elif rchi2_cpl < rchi2_pl:
             logger.debug(f"Fit both cpl and pl and cpl preferred, using that as model")
-            if np.abs(best_p_cpl[2]) < 0.2 or np.abs(best_p_cpl[2])/err_p_cpl[2] < 3:
-                logger.debug(f"This fit would've been cut in the original fitting")
-            elif chi2_cpl > chi2.ppf(0.99, dof_cpl):
-                logger.debug(f"This would've been cut from original fitting because it's not a confident fit")
             fit_params = [best_p_cpl[0], best_p_cpl[1], best_p_cpl[2]]
         elif rchi2_pl < rchi2_cpl:
             logger.debug(f"Fit both cpl and pl and pl preferred, using that as model")
-            if chi2_pl > chi2.ppf(0.99, dof_pl):
-                logger.debug("This would've been cut in original fitting from poor fit")
             fit_params = [best_p_pl[0], best_p_pl[1]]
-        elif fit_cpl is None and fit_pl is None: 
-            logger.warning(f"Tried to fit both but failed both? Don't know what you want from me. ")
-            fit_params = None 
         elif rchi2_cpl == rchi2_pl:
             logger.warning(f"Unbelievable chances, they're equally fit, preference for pl ")
             fit_params = [best_p_pl[0], best_p_pl[1]]
 
     return fit_params
 
-def get_freq_flux_err(row, apply_mask = True, internal_scale=0.02):
+def get_freq_flux_err(row, freqs=GLEAMX_FREQS, fluxes=GLEAMX_INT, errs = GLEAMX_ERR, apply_mask = True, internal_scale=0.02):
     
-    freq = GLEAMX_FREQS
-    int_flux = np.array([row[i] for i in GLEAMX_INT])
-    err_flux = np.array([row[i] for i in GLEAMX_ERR])
+    freq = freqs
+    int_flux = np.array([row[i] for i in fluxes])
+    err_flux = np.array([row[i] for i in errs])
     
     # Gleam-x internal flux error
     err_flux = np.sqrt( err_flux ** 2 + (int_flux * internal_scale)**2)
         
     if apply_mask:
+        if errs == GLEAMX_ERR:
+            if (src_row.ref_ra < 45) & (src_row.ref_ra > 30) & (src_row.ref_dec < -5) & (src_row.ref_dec > -7):
+                logger.debug(f"This is in a bad region, flagging freq 99")
+                mask_reg1 = (freq == 99.)
+                freq = freq[~mask_reg1]
+                int_flux = int_flux[~mask_reg1]
+                err_flux = err_flux[~mask_reg1]
+            if (src_row.ref_ra < 55) & (src_row.ref_ra > 45 )& (src_row.ref_dec < -13) & (src_row.ref_dec > -15):
+                logger.debug(f"This is in a bad region, flagging freq 130")
+                mask_reg2 = (freq == 130.)
+                freq = freq[~mask_reg2]
+                int_flux = int_flux[~mask_reg2]
+                err_flux = err_flux[~mask_reg2]
+            if (src_row.ref_ra < 72) & (src_row.ref_ra >66) & (src_row.ref_dec <2) & (src_row.ref_dec > -2):
+                logger.debug(f"This is in a bad region, flagging freq 130")
+                mask_reg3 = (freq == 130.)
+                freq = freq[~mask_reg3]
+                int_flux = int_flux[~mask_reg3]
+                err_flux = err_flux[~mask_reg3]                       
+            if (src_row.ref_ra < 76) & (src_row.ref_ra >70) & (src_row.ref_dec <9) & (src_row.ref_dec > 5):
+                logger.debug(f"This is in a bad region, flagging freq 99")
+                mask_reg4 = (freq == 99.)
+                freq = freq[~mask_reg4]
+                int_flux = int_flux[~mask_reg4]
+                err_flux = err_flux[~mask_reg4]   
+            if (src_row.ref_ra < 8 )& (src_row.ref_ra > 5) & (src_row.ref_dec < 8 )& (src_row.ref_dec > 6):
+                logger.debug(f"This is in a bad region, flagging freq 99")
+                mask_reg5 = (freq == 99.)
+                freq = freq[~mask_reg5]
+                int_flux = int_flux[~mask_reg5]
+                err_flux = err_flux[~mask_reg5]  
+
         mask = np.isfinite(int_flux) & (int_flux > 0) \
             & np.isfinite(err_flux) & (err_flux > 0)
         
@@ -261,25 +419,31 @@ def get_freq_flux_err(row, apply_mask = True, internal_scale=0.02):
         int_flux = int_flux[mask]
         err_flux = err_flux[mask]
     
+
+    
     return np.squeeze(freq), np.squeeze(int_flux), np.squeeze(err_flux)
 
 
-def search_cat(source: source, catalogue, search_radius=1*u.arcmin):
+def search_cat(source, catalogue, search_radius=1*u.arcmin):
 
-    target = SkyCoord(ra=source.ra,dec=source.dec)
+    target = SkyCoord(src_row.ref_ra*u.deg, src_row.ref_dec*u.deg, frame="icrs")
+    catalogue = Table.read(catalogue).to_pandas()
+    cats = SkyCoord(catalogue.RA, catalogue.Dec, frame="fk5", unit=u.deg)
     try: 
-        distances = target.separation(catalogue, search_radius)
-        idc = np.where(distances < search_radius)[0]
-        if len(idc) > 1: 
+        distances = target.separation(cats)
+        idc = distances <= search_radius
+        src_inds = np.where(idc)[0]
+        if len(src_inds) > 1: 
             logger.warning("Found multiple matches! Which one do you want?")
             logger.warning(f"Indecies of matches: {idc}: {distances[idc]}")
             raise IndexError
         else: 
-            return catalogue[idc]
+            return catalogue.iloc[idc]
         
     except: 
         logger.debug(f"Couldn't find {source.name} in catalogue")
         raise Exception 
+    
 
     # TODO/WHEREIM UP TO: Use the index from above to get all entries from catalogue for hte source and then create array based on the column names (also add that as variable) then you can return the array with values from the column names 
 
@@ -296,6 +460,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', default="SEDs", help="directory to save the seds, default (SEDs) ")
     parser.add_argument("-src", default=None,type=str, help="src name to search and plot")
     parser.add_argument("-coord", default=None, type=str, help="Coordinate string to use for a crossmatch and plots all srcs within 2arcmin. assumes hh:mm:ss +dd:mm:ss format")
+    parser.add_argument("-var", default=None,type=int, help="Do you also want to plot 2013, 2014 from Ross et al. 2020? 0 = both, 1 = 2013, 2=2014, will also try fitting just pl and cpl for each yr" )
+    parser.add_argument("-varcat", type=str, default="/data/MWA/master_pop_extended.fits", help="If plotting the var, this is the dest of var catalogue.")
 
     args = parser.parse_args()
 
@@ -342,8 +508,9 @@ if __name__ == '__main__':
     elif args.num is not None and args.src is None:
         plot_num = args.num
         logger.debug(f"Going to plot only subset: {plot_num} sources")
-        mask_fit = df.loc[np.isfinite(df.cpl_chi2) | np.isfinite(df.pl_rchi2)]
-        max_num = mask_fit.shape[0]
+        # mask_fit = df.loc[np.isfinite(df.cpl_chi2) | np.isfinite(df.pl_rchi2)]
+        max_num = df.shape[0]
+        mask_fit = df 
         logger.debug(f"Total with a fit: {max_num}")
         plt_inds = np.random.randint(0,max_num,plot_num)
     else:
@@ -358,8 +525,13 @@ if __name__ == '__main__':
         coordnm = str(coord_src).replace(" ","_")
         logger.debug(f"Plotting SED for {coordnm}")
         
-        freq, int_flux, err_flux = get_freq_flux_err(src_row, apply_mask = False, internal_scale=0.02)
-
+        freq, int_flux, err_flux = get_freq_flux_err(src_row, apply_mask = True, internal_scale=0.02)
+        p0 = (np.median(int_flux), -0.8)
+        ransac_chi2 = try_ransac_fit(freq,int_flux,err_flux,p0)
+        bad_freq_mask = ransac_chi2 < (np.mean(ransac_chi2)-(5*np.std(ransac_chi2)))
+        if any(bad_freq_mask):
+            logger.warning(f"THERE IS A BAD FREQ FOR THIS SOURCE: {coordnm}")
+            logger.warning(f"You should check mosaic {freq[bad_freq_mask]}")
         fit_params = read_fit_params(src_row,src_row.pl_chi2,src_row.cpl_chi2)
-
-        plot_sed(freq, int_flux, err_flux, fit_params, coord_src, args.d)
+        
+        plot_sed(freq, int_flux, err_flux, fit_params, src_row, args.d)
