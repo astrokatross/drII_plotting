@@ -124,6 +124,10 @@ if __name__ == "__main__":
             savenm_str[0] = "72-103MHz"
             stdev=0.02
             nsig=1
+    if "green" in savenm_str: 
+        savenm_str = savenm_str[1:]
+        stdev=0.02
+        nsig=1
     if "white" in savenm_str:
         stdev=0.005
         nsig=1

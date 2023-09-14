@@ -4,3 +4,6 @@ aegean_testing/*fits
 aegean_testing/white_region_comp.reg
 noise_analysis/*.fits
 noise_analysis/ch*
+noise_analysis/*.png
+sed_plotting/*png
+
