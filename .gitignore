@@ -9,3 +9,4 @@ sed_plotting/*png
 plots/
 sky_coverage/*png 
 sky_coverage/*pdf
+data/

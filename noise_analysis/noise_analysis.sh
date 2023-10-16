@@ -9,10 +9,10 @@ return;
 while getopts ":f:c:" opt; do
     case $opt in
     f)
-        freq="${OPTARG}" >2&
+        freq="${OPTARG}"
         ;;
     c)
-        colour="${OPTARG}" >&2 
+        colour="${OPTARG}" 
         ;;
     ? | : | h)
             usage ;;
@@ -158,9 +158,9 @@ AeRes -c ${datadir}/XG_${colour}${freq}_priorsub_comp.fits -f ${datadir}/XG_${co
 AeRes -c ${datadir}/XG_white_comp.fits -f ${datadir}/XG_white.fits -r ${datadir}/XG_white_residual.fits
 
 # # Subtract background from image
-python subtract.py --image ${datadir}/XG_${colour}${freq}.fits --bkg ${datadir}/XG_${colour}${freq}_priorsub_resid_bkg.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub.fits
-python subtract.py --image ${datadir}/XG_${colour}${freq}.fits --bkg ${datadir}/XG_${colour}${freq}_bkg.fits --output ${datadir}/XG_${colour}${freq}_bkgsub.fits
-python subtract.py --image ${datadir}/XG_white.fits --bkg ${datadir}/XG_white_bkg.fits --output ${datadir}/XG_white_bkgsub.fits
+python noise_analysis/subtract.py --image ${datadir}/XG_${colour}${freq}.fits --bkg ${datadir}/XG_${colour}${freq}_priorsub_resid_bkg.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub.fits
+python noise_analysis/subtract.py --image ${datadir}/XG_${colour}${freq}.fits --bkg ${datadir}/XG_${colour}${freq}_bkg.fits --output ${datadir}/XG_${colour}${freq}_bkgsub.fits
+python noise_analysis/subtract.py --image ${datadir}/XG_white.fits --bkg ${datadir}/XG_white_bkg.fits --output ${datadir}/XG_white_bkgsub.fits
 
 
 # Subtract catalogue from background-subtracted image
@@ -176,24 +176,24 @@ AeRes --mask --sigma=1 -c ${datadir}/XG_white_comp.fits -f ${datadir}/XG_white_b
 
 
 # Create S/N map
-python div.py --image ${datadir}/XG_${colour}${freq}.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_sigma.fits
-python div.py --image ${datadir}/XG_${colour}${freq}.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_sigma.fits
-python div.py --image ${datadir}/XG_white.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_white.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_sigma.fits
 
 
 # Background-subtracted S/N map
-python div.py --image ${datadir}/XG_${colour}${freq}_priorsub_bkgsub.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_sigma.fits
-python div.py --image ${datadir}/XG_${colour}${freq}_bkgsub.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_bkgsub_sigma.fits
-python div.py --image ${datadir}/XG_white_bkgsub.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_bkgsub_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}_priorsub_bkgsub.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}_bkgsub.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_bkgsub_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_white_bkgsub.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_bkgsub_sigma.fits
 
 
 # Masked, background-subtracted S/N map
-python div.py --image ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_masked.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_masked_sigma.fits
-python div.py --image ${datadir}/XG_${colour}${freq}_bkgsub_masked.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_bkgsub_masked_sigma.fits
-python div.py --image ${datadir}/XG_white_bkgsub_masked.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_bkgsub_masked_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_masked.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_masked_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}_bkgsub_masked.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_bkgsub_masked_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_white_bkgsub_masked.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_bkgsub_masked_sigma.fits
 
 
 # Residuals, background-subtracted S/N map
-python div.py --image ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_resid.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_resid_sigma.fits
-python div.py --image ${datadir}/XG_${colour}${freq}_bkgsub_resid.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_bkgsub_resid_sigma.fits
-python div.py --image ${datadir}/XG_white_bkgsub_resid.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_bkgsub_resid_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_resid.fits --rms ${datadir}/XG_${colour}${freq}_priorsub_resid_rms.fits --output ${datadir}/XG_${colour}${freq}_priorsub_bkgsub_resid_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_${colour}${freq}_bkgsub_resid.fits --rms ${datadir}/XG_${colour}${freq}_rms.fits --output ${datadir}/XG_${colour}${freq}_bkgsub_resid_sigma.fits
+python noise_analysis/div.py --image ${datadir}/XG_white_bkgsub_resid.fits --rms ${datadir}/XG_white_rms.fits --output ${datadir}/XG_white_bkgsub_resid_sigma.fits
