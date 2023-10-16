@@ -6,4 +6,4 @@ noise_analysis/*.fits
 noise_analysis/ch*
 noise_analysis/*.png
 sed_plotting/*png
-
+plots/

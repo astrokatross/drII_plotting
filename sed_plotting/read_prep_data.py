@@ -140,57 +140,60 @@ def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
                 label=f'Curved power-law, q {fit_params[2]:.3f}'
             )
     if args.var is not None: 
-        src_var_row = search_cat(src_row, args.varcat, search_radius=1*u.arcmin)
-        freq1, flux1, errflux1 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY1_INT, errs = VARY1_RMS, internal_scale=0.03, apply_mask=False)
-        freq2, flux2, errflux2 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY2_INT, errs = VARY2_RMS, internal_scale=0.03, apply_mask=False)
+        src_var_row = search_cat(src_row, args.varcat, search_radius=1.5*u.arcmin)
+        if src_var_row.size == 0: 
+            logger.warning("There was no 2013/2014 data for this source, not plotting")
+        else: 
+            freq1, flux1, errflux1 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY1_INT, errs = VARY1_RMS, internal_scale=0.03, apply_mask=False)
+            freq2, flux2, errflux2 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY2_INT, errs = VARY2_RMS, internal_scale=0.03, apply_mask=False)
 
-    if args.var==1:
-        logger.debug("GOING TO PLOT FOR 2013")
-        ax.errorbar(
-        freq1,
-        flux1,
-        yerr=errflux1,
-        ls='None',
-        marker='.',
-        color="darkviolet",
-        alpha=0.5,
-        label="2013"
-        )
-    elif args.var==2:
-        logger.debug("GOING TO PLOT FOR 2014")
-        ax.errorbar(
-        freq2,
-        flux2,
-        yerr=errflux2,
-        ls='None',
-        marker='.',
-        color="mediumblue",
-        alpha=0.5,
-        label="2014"
-        )  
-    elif args.var==0:
-        logger.debug("GOING TO PLOT 2013,2014")
-        
-        ax.errorbar(
-        freq1,
-        flux1,
-        yerr=errflux1,
-        ls='None',
-        marker='.',
-        color="darkviolet",
-        alpha=0.5,
-        label="2013"
-        )
-        ax.errorbar(
-        freq2,
-        flux2,
-        yerr=errflux2,
-        ls='None',
-        marker='.',
-        color="mediumblue",
-        alpha=0.5,
-        label="2014"
-        )  
+            if args.var==1:
+                logger.debug("GOING TO PLOT FOR 2013")
+                ax.errorbar(
+                freq1,
+                flux1,
+                yerr=errflux1,
+                ls='None',
+                marker='.',
+                color="darkviolet",
+                alpha=0.5,
+                label="2013"
+                )
+            elif args.var==2:
+                logger.debug("GOING TO PLOT FOR 2014")
+                ax.errorbar(
+                freq2,
+                flux2,
+                yerr=errflux2,
+                ls='None',
+                marker='.',
+                color="mediumblue",
+                alpha=0.5,
+                label="2014"
+                )  
+            elif args.var==0:
+                logger.debug("GOING TO PLOT 2013,2014")
+                
+                ax.errorbar(
+                freq1,
+                flux1,
+                yerr=errflux1,
+                ls='None',
+                marker='.',
+                color="darkviolet",
+                alpha=0.5,
+                label="2013"
+                )
+                ax.errorbar(
+                freq2,
+                flux2,
+                yerr=errflux2,
+                ls='None',
+                marker='.',
+                color="mediumblue",
+                alpha=0.5,
+                label="2014"
+                )  
 
 
     if legend is True:
@@ -259,8 +262,6 @@ def try_ransac_fit(freq, flux,err_flux,p0):
     return chi2
 
 
-
-
 def fit_pl(freq, flux, err_flux):
     p0 = (np.median(flux), -0.8)
     try: 
@@ -285,7 +286,7 @@ def fit_pl(freq, flux, err_flux):
         if chi2_pl > chi2.ppf(0.999, dof_pl):
             logger.debug(f"PL fit would've been set to none before any checks: {chi2_pl} > {chi2.ppf(0.999, dof_pl)}")
             ransac_chi2 = try_ransac_fit(freq,flux,err_flux,p0)
-            logger.debug(f"The ransac chi2 is: {ransac_chi2}")
+            # logger.debug(f"The ransac chi2 is: {ransac_chi2}")
             fit_pl = None
             rchi2_pl = None
             chi2_pl = None 
@@ -331,13 +332,16 @@ def fit_cpl(freq, flux, err_flux):
         rchi2_cpl = np.inf  
     return best_p_cpl, chi2_cpl, rchi2_cpl
 
-def read_fit_params(row,pl,cpl):
+def read_fit_params(row,pl,cpl,try_fit=False):
 
     if np.isfinite(cpl):
         fit_params = [row[i] for i in ["cpl_norm","cpl_alpha", "cpl_q"]]
     elif np.isfinite(pl): 
         fit_params = [row[i] for i in ["pl_norm","pl_alpha"]]
     else: 
+        logger.debug(f"No fitting params found for {row['src_name']}")
+        fit_params = None 
+    if try_fit is True: 
         src_name = row["src_name"]
         logger.warning(f"Both params are none?? No model for {src_name}")
         logger.debug(f"Going to try fitting just a pl")
@@ -427,7 +431,10 @@ def get_freq_flux_err(row, freqs=GLEAMX_FREQS, fluxes=GLEAMX_INT, errs = GLEAMX_
 def search_cat(source, catalogue, search_radius=1*u.arcmin):
 
     target = SkyCoord(src_row.ref_ra*u.deg, src_row.ref_dec*u.deg, frame="icrs")
-    catalogue = Table.read(catalogue).to_pandas()
+    catalogue = Table.read(catalogue)
+    catalogue["RA"] = catalogue["RA"].astype(float)
+    catalogue["Dec"] = catalogue["Dec"].astype(float)
+    catalogue = catalogue.to_pandas()
     cats = SkyCoord(catalogue.RA, catalogue.Dec, frame="fk5", unit=u.deg)
     try: 
         distances = target.separation(cats)
@@ -435,8 +442,10 @@ def search_cat(source, catalogue, search_radius=1*u.arcmin):
         src_inds = np.where(idc)[0]
         if len(src_inds) > 1: 
             logger.warning("Found multiple matches! Which one do you want?")
-            logger.warning(f"Indecies of matches: {idc}: {distances[idc]}")
-            raise IndexError
+            logger.warning(f"Indecies of matches: {src_inds}: {distances[idc]}")
+            logger.debug(f"Going to choose nearer source, but may be wrong/resolved source")
+            minid = src_inds[np.argmin(distances[idc])]
+            return catalogue.iloc[minid]
         else: 
             return catalogue.iloc[idc]
         
