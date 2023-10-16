@@ -66,7 +66,7 @@ def plot_distribution(n, bin_centers, binss, gu, stdev, mean_rms=1.0, mean_bkg=0
     ax.plot(np.linspace(xmin,xmax,1000),tgu(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE measured')
     ax.legend()
     ax.set_title(f"{title}")
-    plt.savefig(f"noise_distribution_{savenm}.png")
+    plt.savefig(f"noise_distribution_{savenm}.pdf")
 
 
     return 

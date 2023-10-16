@@ -1,25 +1,24 @@
 #!/usr/bin/python
 
 import numpy as np
-
 import os
 import re
 import glob
-
 import astropy.io.fits as fits
 from astropy import wcs
-
 from astropy import units as u
 from astropy import coordinates
 from astropy.coordinates import SkyCoord
-
-#import cartopy.crs as ccrs
 from matplotlib import pyplot as plt
 from matplotlib.patches import Ellipse
-
 from matplotlib import rc
+from astropy.visualization.wcsaxes import Quadrangle
 # rc('text', usetex=True)
 # rc('font',**{'family':'serif','serif':['serif']})
+
+"""
+Script to plot nice coverage of the final mosaic and (hopefully) overlay the region to be considered during the data release 
+"""
 
 plt.rcParams["axes.axisbelow"] = False
 plt.rcParams.update({
@@ -39,7 +38,9 @@ sbplt_pad_hspace = 0.5   # the amount of height reserved for white space between
 subplot_cols = 1
 subplot_rows = 1
 save_path = "/data/gleam_x/drII_plotting/plots"
-
+data_path = "/data/gleam_x/drII_plotting/data"
+vmin = -0.003e3
+vmax = 0.01e3
 def redo_axis_labels(ticklist):
     new_label_list = []
     for label in ticklist:
@@ -69,6 +70,31 @@ def unwrap(x):
         x -= 2*np.pi
     return -x
 vunwrap = np.vectorize(unwrap)
+
+im_dr3 = fits.open(f"{data_path}/GLEAMX_DRII_170-231MHz.fits")
+wcs_dr3 = wcs.WCS(im_dr3[0].header)
+
+
+fig = plt.figure(figsize=(25*cm,20*cm))
+ax = fig.add_subplot(1,1,1,projection=wcs_dr3)
+im = ax.imshow(im_dr3[0].data*1000,origin="lower",vmin = vmin, vmax = vmax,cmap="gnuplot2")
+overlay = ax.get_coords_overlay('icrs')
+overlay.grid(color='black', ls='dotted')
+r = Quadrangle((100, -85)*u.deg, -150*u.deg, 115*u.deg,
+               edgecolor='white', facecolor='none',
+               transform=ax.get_transform('fk5'))
+
+ax.add_patch(r)
+lon = ax.coords['dec']
+lon.set_axislabel("Declination")
+lat = ax.coords['ra']
+lat.set_axislabel("Right Ascension")
+lat.set_ticks(number=3)
+
+
+fig.savefig(f"{save_path}/mosaic_coverage.png",bbox_inches="tight")
+plt.clf()
+
 
 plotnum = 1
 
@@ -112,7 +138,7 @@ y_obs_5 = np.radians([-32.7, -20.7, -20.7, -32.7])
 #                         width=width, height=height, angle = 0.0,
 #                        ))
 # First one is just to get it plotted so I can get the ticklabels
-fig.savefig("dummy.png")
+# fig.savefig("dummy.png")
 
 # Observed region
 ax.plot(x_obs_1, y_obs_1, color="C3", alpha=0.1, zorder = -10)
@@ -166,7 +192,7 @@ new_label_list = redo_axis_labels(ticklist)
 new = ax.set_xticklabels(new_label_list)
 
 ax.legend()
-plt.title(f"")
+
 
 fig.savefig(f"{save_path}/gleamx_coverage_dr2.pdf", dpi=200, pad_inches=0.0, bbox_inches='tight')
 
