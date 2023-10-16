@@ -7,3 +7,5 @@ noise_analysis/ch*
 noise_analysis/*.png
 sed_plotting/*png
 plots/
+sky_coverage/*png 
+sky_coverage/*pdf

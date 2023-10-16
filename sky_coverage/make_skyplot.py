@@ -38,6 +38,7 @@ sbplt_pad_hspace = 0.5   # the amount of height reserved for white space between
 
 subplot_cols = 1
 subplot_rows = 1
+save_path = "/data/gleam_x/drII_plotting/plots"
 
 def redo_axis_labels(ticklist):
     new_label_list = []
@@ -167,7 +168,7 @@ new = ax.set_xticklabels(new_label_list)
 ax.legend()
 plt.title(f"")
 
-fig.savefig("gleamx_coverage_dr2.pdf", dpi=200, pad_inches=0.0, bbox_inches='tight')
+fig.savefig(f"{save_path}/gleamx_coverage_dr2.pdf", dpi=200, pad_inches=0.0, bbox_inches='tight')
 
 
 
