@@ -138,7 +138,7 @@ y_obs_5 = np.radians([-32.7, -20.7, -20.7, -32.7])
 #                         width=width, height=height, angle = 0.0,
 #                        ))
 # First one is just to get it plotted so I can get the ticklabels
-# fig.savefig("dummy.png")
+fig.savefig(f"{save_path}/dummy.png")
 
 # Observed region
 ax.plot(x_obs_1, y_obs_1, color="C3", alpha=0.1, zorder = -10)

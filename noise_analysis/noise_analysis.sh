@@ -5,6 +5,8 @@ usage()
 echo "script to make all the images for noise analysis" 1>&2;
 return;
 }
+freq=
+colour=
 
 while getopts ":f:c:" opt; do
     case $opt in
@@ -14,8 +16,6 @@ while getopts ":f:c:" opt; do
     c)
         colour="${OPTARG}" 
         ;;
-    ? | : | h)
-            usage ;;
   esac
 done    
 
