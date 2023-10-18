@@ -30,7 +30,7 @@
 
 # source noise_analysis/noise_analysis.sh -f "_072-103MHz" -c "red"
 # source noise_analysis/noise_analysis.sh -f "_072-080MHz" -c "red"
-source noise_analysis/noise_analysis.sh -f "_080-088MHz" -c "red"
+# source noise_analysis/noise_analysis.sh -f "_080-088MHz" -c "red"
 # ./noise_analysis/noise_analysis.sh -f "_088-095MHz" -c "red"
 # ./noise_analysis/noise_analysis.sh -f "_095-103MHz" -c "red"
 
@@ -49,23 +49,8 @@ source noise_analysis/noise_analysis.sh -f "_080-088MHz" -c "red"
 # ------------------------------------------------------------------
 # -------------------    NICE PAPER PLOTS   ------------------------
 # ------------------------------------------------------------------
-python sky_coverage/make_skyplot.py
+# python sky_coverage/make_skyplot.py
 
-python noise_analysis/plotting_noise.py --imagenm "XG_white.fits" --rms "XG_white_rms.fits" --bkg "XG_white_bkg.fits" 
-python noise_analysis/plotting_noise.py --imagenm "XG_white_sigma.fits" --rms "XG_white_rms.fits" --bkg "XG_white_bkg.fits" 
-python noise_analysis/plotting_noise.py --imagenm "XG_white_bkgsub_masked_sigma.fits" --rms "XG_white_rms.fits" --bkg "XG_white_bkg.fits" 
-python noise_analysis/plotting_noise.py --imagenm "XG_white_bkgsub_masked_sigma.fits" --rms "XG_white_rms.fits" --bkg "XG_white_bkg.fits" 
-
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-103MHz_bkgsub.fits" --rms "XG_red_072-103MHz_rms.fits" --bkg "XG_red_072-103MHz_bkg.fits" 
-
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-103MHz_bkgsub_masked_sigma.fits" --rms "XG_red_072-103MHz_rms.fits" --bkg "XG_red_072-103MHz_bkg.fits" 
-
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-103MHz_priorsub_bkgsub_masked_sigma.fits" --rms "XG_red_072-103MHz_priorsub_resid_rms.fits" --bkg "XG_red_072-103MHz_priorsub_resid_bkg.fits" 
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-103MHz_priorsub_bkgsub.fits" --rms "XG_red_072-103MHz_priorsub_resid_rms.fits" --bkg "XG_red_072-103MHz_priorsub_resid_bkg.fits" 
-
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-080MHz_bkgsub.fits" --rms "XG_red_072-080MHz_rms.fits" --bkg "XG_red_072-080MHz_bkg.fits" 
-
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-080MHz_bkgsub_masked_sigma.fits" --rms "XG_red_072-080MHz_rms.fits" --bkg "XG_red_072-080MHz_bkg.fits" 
-
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-080MHz_priorsub_bkgsub_masked_sigma.fits" --rms "XG_red_072-080MHz_priorsub_resid_rms.fits" --bkg "XG_red_072-080MHz_priorsub_resid_bkg.fits" 
-python noise_analysis/plotting_noise.py --imagenm "XG_red_072-080MHz_priorsub_bkgsub.fits" --rms "XG_red_072-080MHz_priorsub_resid_rms.fits" --bkg "XG_red_072-080MHz_priorsub_resid_bkg.fits" 
+python noise_analysis/plotting_noise.py --imagenm "XG_red_072-103MHz.fits" --compare
+python noise_analysis/plotting_noise.py --imagenm "XG_white.fits"
+python noise_analysis/plotting_noise.py --imagenm "XG_red_072-080MHz.fits" --compare

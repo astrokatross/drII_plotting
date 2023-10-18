@@ -25,7 +25,7 @@ fit_g = fitting.LevMarLSQFitter()
 # note: stdev=1, nsig=5 --> sigma
 # stdev=0.025/0.002, nsig=1 --> raw
 
-def fit_hists(data, stdev = 1.0, nsig=1):
+def fit_hists(data, stdev = 1.0, nsig=5):
     bins=100
     xmin = -nsig*stdev
     xmax = nsig*stdev
@@ -38,36 +38,125 @@ def fit_hists(data, stdev = 1.0, nsig=1):
 
     return n, bin_centers, binss, gu 
 
-def plot_distribution(n, bin_centers, binss, gu, stdev, mean_rms=1.0, mean_bkg=0., title="", sigma=False,savenm=""):
+def plot_distribution(imstring, stdev=1.0, nsig=5., mean_rms=1.0, mean_bkg=0., savenm=""):
 
-    tgu = copy.deepcopy(gu)
-    tgu.mean.value = mean_bkg
-    tgu.stddev.value = mean_rms
+# Image names I'll need: 
+# _bkgsub_sigma.fits, _bkgsub_masked_sigma.fits, _bkgsub_resid_sigma.fits
+# _priorsub_bkgsub_sigma.fits, _priorsub_bkgsub_masked_sigma.fits, _priorsub_bkgsub_resid_sigma.fits 
 
-    if sigma is False:
-        xlabel="Jy/beam"
-    else:
-        xlabel="$\sigma$"
-
-
+    mean_bkg = 0.
+    mean_rms = 1.
     xmin = -nsig*stdev
     xmax = nsig*stdev
 
-    fig = plt.figure(figsize=(10*cm, 10*cm))
-    ax = fig.add_subplot(111)
-    ax.bar(bin_centers, n, color = 'C6', edgecolor = "none", width=(binss[1]-binss[0]),alpha=0.5) 
-    ax.set_yscale('log')
-    ax.set_xlabel(f"Pixel distribution ({xlabel})")
-    ax.set_xlim([xmin,xmax])
-    ax.set_ylim([1.0,1.2*max(n)])
+    im = fits.getdata(f"{args.datadir}{imstring}_bkgsub_sigma.fits")
+    im_masked = fits.getdata(f"{args.datadir}{imstring}_bkgsub_masked_sigma.fits")
+    im_resid = fits.getdata(f"{args.datadir}{imstring}_bkgsub_resid_sigma.fits")
 
-    ax.plot(np.linspace(xmin,xmax,1000),gu(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Pixel dist fit')
+    n_im, bin_centers_im, bins_im, gu_im = fit_hists(im)
+    n_im_mask, bin_centers_im_mask, bins_im_mask, gu_im_mask = fit_hists(im_masked)
+    n_im_resid, bin_centers_im_resid, bins_im_resid, gu_im_resid = fit_hists(im_resid)
 
-    ax.plot(np.linspace(xmin,xmax,1000),tgu(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE measured')
-    ax.legend()
-    ax.set_title(f"{title}")
+    tgu_im = copy.deepcopy(gu_im)
+    tgu_im.mean.value = mean_bkg
+    tgu_im.stddev.value = mean_rms
+    tgu_im_mask = copy.deepcopy(gu_im_mask)
+    tgu_im_mask.mean.value = mean_bkg
+    tgu_im_mask.stddev.value = mean_rms
+    tgu_im_resid = copy.deepcopy(gu_im_resid)
+    tgu_im_resid.mean.value = mean_bkg
+    tgu_im_resid.stddev.value = mean_rms
+
+    if args.compare is True: 
+        im_gd = fits.getdata(f"{args.datadir}{imstring}_priorsub_bkgsub_sigma.fits")
+        im_masked_gd = fits.getdata(f"{args.datadir}{imstring}_priorsub_bkgsub_masked_sigma.fits")
+        im_resid_gd = fits.getdata(f"{args.datadir}{imstring}_priorsub_bkgsub_resid_sigma.fits")
+        n_im_gd, bin_centers_im_gd, bins_im_gd, gu_im_gd = fit_hists(im_gd)
+        n_im_mask_gd, bin_centers_im_mask_gd, bins_im_mask_gd, gu_im_mask_gd = fit_hists(im_masked_gd)
+        n_im_resid_gd, bin_centers_im_resid_gd, bins_im_resid_gd, gu_im_resid_gd = fit_hists(im_resid_gd)
+
+        tgu_im_gd = copy.deepcopy(gu_im_gd)
+        tgu_im_gd.mean.value = mean_bkg
+        tgu_im_gd.stddev.value = mean_rms
+        tgu_im_mask_gd = copy.deepcopy(gu_im_mask_gd)
+        tgu_im_mask_gd.mean.value = mean_bkg
+        tgu_im_mask_gd.stddev.value = mean_rms
+        tgu_im_resid_gd = copy.deepcopy(gu_im_resid_gd)
+        tgu_im_resid_gd.mean.value = mean_bkg
+        tgu_im_resid_gd.stddev.value = mean_rms
+
+
+    print("calculated distributions, plotting now...")
+
+    if args.compare is True: 
+        fig = plt.figure(figsize=(19*cm, 12.4*cm))
+        gs = fig.add_gridspec(2,3, wspace=0.2,hspace=0.4)
+        ax1 = fig.add_subplot(gs[0,0])
+        ax2 = fig.add_subplot(gs[0,1])
+        ax3 = fig.add_subplot(gs[0,2])
+        ax4 = fig.add_subplot(gs[1,0])
+        ax5 = fig.add_subplot(gs[1,1])
+        ax6 = fig.add_subplot(gs[1,2])
+        axes_total = [ax1, ax2, ax3, ax4, ax5, ax6]
+    else: 
+        fig = plt.figure(figsize=(19*cm, 6.2*cm))
+        gs = fig.add_gridspec(1,3, wspace=0.2)
+        ax1 = fig.add_subplot(gs[0,0])
+        ax2 = fig.add_subplot(gs[0,1])
+        ax3 = fig.add_subplot(gs[0,2])
+        axes_total = [ax1, ax2, ax3]
+
+    ax1.bar(bin_centers_im, n_im, color = 'C6', edgecolor = "none", width=(bins_im[1]-bins_im[0]),alpha=0.5) 
+    ax1.plot(np.linspace(xmin,xmax,1000),gu_im(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
+    ax1.plot(np.linspace(xmin,xmax,1000),tgu_im(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
+    ax1.set_ylim([1.0,1.2*max(n_im)])
+    ax1.set_title(f"Bkg subtracted, S/N image", fontsize=7)
+
+    ax2.bar(bin_centers_im_mask, n_im_mask, color = 'C6', edgecolor = "none", width=(bins_im_mask[1]-bins_im_mask[0]),alpha=0.5) 
+    ax2.plot(np.linspace(xmin,xmax,1000),gu_im_mask(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
+    ax2.set_ylim([1.0,1.2*max(n_im_mask)])
+    ax2.set_title(f"Bkg subtracted, $>5\sigma$ sources masked", fontsize=7)
+    ax2.plot(np.linspace(xmin,xmax,1000),tgu_im_mask(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
+
+    ax3.bar(bin_centers_im_resid, n_im_resid, color = 'C6', edgecolor = "none", width=(bins_im_resid[1]-bins_im_resid[0]),alpha=0.5) 
+    ax3.plot(np.linspace(xmin,xmax,1000),gu_im_resid(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
+    ax3.set_ylim([1.0,1.2*max(n_im_resid)])
+    ax3.set_title(f"$>5\sigma$ Sources and bkg subtrackted ", fontsize=7)
+    ax3.plot(np.linspace(xmin,xmax,1000),tgu_im_resid(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
+
+    if args.compare is True: 
+        ax4.bar(bin_centers_im_gd, n_im_gd, color = 'C6', edgecolor = "none", width=(bins_im_gd[1]-bins_im_gd[0]),alpha=0.5) 
+        ax4.plot(np.linspace(xmin,xmax,1000),gu_im_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
+        ax4.set_title(f"New bkg subtracted, S/N image", fontsize=7)
+        ax4.set_ylim([1.0,1.2*max(n_im_gd)])
+        ax4.plot(np.linspace(xmin,xmax,1000),tgu_im_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
+
+        ax5.bar(bin_centers_im_mask_gd, n_im_mask_gd, color = 'C6', edgecolor = "none", width=(bins_im_mask_gd[1]-bins_im_mask_gd[0]),alpha=0.5) 
+        ax5.set_ylim([1.0,1.2*max(n_im_mask_gd)])
+        ax5.set_title(f"New bkg subtracted, $>5\sigma$ sources masked", fontsize=7)
+        ax5.plot(np.linspace(xmin,xmax,1000),gu_im_mask_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
+        ax5.plot(np.linspace(xmin,xmax,1000),tgu_im_mask_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
+        
+        ax6.bar(bin_centers_im_resid_gd, n_im_resid_gd, color = 'C6', edgecolor = "none", width=(bins_im_resid_gd[1]-bins_im_resid_gd[0]),alpha=0.5) 
+        ax6.plot(np.linspace(xmin,xmax,1000),gu_im_resid_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
+        ax6.set_ylim([1.0,1.2*max(n_im_resid_gd)])
+        ax6.set_title(f"$>5\sigma$ sources and new bkg subtracted", fontsize=7)
+        ax6.plot(np.linspace(xmin,xmax,1000),tgu_im_resid_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
+
+    for ax in axes_total:
+        ax.axvline(x=0.0, lw=0.5, color='k', linestyle='-')
+        ax.axvline(x=-1, lw=0.5, color='k', linestyle='--')
+        ax.axvline(x=-2, lw=0.5, color='k', linestyle='-.')
+        ax.axvline(x=-5, lw=0.5, color='k', linestyle=':')
+        ax.axvline(x=1, lw=0.5, color='k', linestyle='--')
+        ax.axvline(x=2, lw=0.5, color='k', linestyle='-.')
+        ax.axvline(x=5, lw=0.5, color='k', linestyle=':')
+        ax.set_yscale('log')
+        ax.set_xlabel("$\sigma$")
+        ax.set_xlim([xmin,xmax])
+        # ax.legend()
+
     plt.savefig(f"{args.savedir}/noise_distribution_{savenm}.pdf",bbox_inches='tight')
-
 
     return 
 
@@ -83,14 +172,6 @@ if __name__ == "__main__":
         help="Image name to import, if rms and bkg aren't specified, then will find rms and bkg for image of same name"
     )
     parser.add_argument(
-        '--rms',
-        help="The prenm for the rms, really only need to define if you want to measure using a different rms and bkg to the one that would be default from BANE for the image default=imagenm_rms.fits"
-    )
-    parser.add_argument(
-        '--bkg',
-        help="See rms description, but it's for bkg default=imagenm_bkg.fits"
-    )
-    parser.add_argument(
         '--datadir',
         type=str,
         default="data/",
@@ -102,81 +183,27 @@ if __name__ == "__main__":
         default="plots/",
         help="directory to save the plots made (default=./plots)"
     )
+    parser.add_argument(
+        '--compare',
+        action='store_true',
+        default=False,
+        help="Do you want to compare with the accurate background distributions? Default=False"
+    )
 
 
     args = parser.parse_args()
-    image = fits.getdata(f"{args.datadir}{args.imagenm}")
     imstring = args.imagenm.split(".")[0]
     savenm_str = imstring.split("_")[1:]
 
-    if args.rms:
-        rms = fits.getdata(f"{args.datadir}{args.rms}")
-        if "priorsub" in args.rms.split("_")[1:] and "priorsub" not in savenm_str:
-            savenm_str.append("priorsub")
-            imstring = args.imagenm.replace(".fits","_priorsub")
-    else:
-        rms = fits.getdata(f"{args.datadir}{imstring}_rms.fits")
-    if args.bkg:
-        bkg = fits.getdata(f"{args.datadir}{args.bkg}")
-    else:
-        bkg = fits.getdata(f"{args.datadir}{imstring}_bkg.fits")
-
-    mean_rms = np.nanmean(rms)
-    mean_bkg = np.nanmean(bkg)
-
-    print(savenm_str)
-    sigma=False
-
-    if "red" in savenm_str:
-        if "MHz" in savenm_str[1]:
-            savenm_str = savenm_str[1:]
-            stdev=0.02
-            nsig=1
-        else: 
-            savenm_str[0] = "72-103MHz"
-            stdev=0.02
-            nsig=1
-    if "green" in savenm_str: 
-        savenm_str = savenm_str[1:]
-        stdev=0.02
-        nsig=1
-    if "white" in savenm_str:
-        stdev=0.005
-        nsig=1
-    if "bkgsub" in savenm_str:
-        bkgsub=True
-        mean_bkg=0.
-    if "sigma" in savenm_str:
-        sigma = True
-        stdev=1
-        nsig=5
-        mean_bkg = 0.
-        mean_rms = 1.
-        
-    
-    savenm_str = " ".join(savenm_str)
-    savenm_str = savenm_str.replace("priorsub","accurate noise")
-    savenm_str = savenm_str.replace("maked","masked")
-    savenm_str = savenm_str.replace("resid","subtracted")
-    savenm_str = savenm_str.replace("bkgsub","bkg subtracted")
-    savenm_str = savenm_str.replace("white","170-231MHz")
-    savenm_str = savenm_str.replace("sigma","S/N image")
+# Image names I'll need: 
+# _bkgsub_sigma.fits, _bkgsub_masked_sigma.fits, _bkgsub_resid_sigma.fits
+# _priorsub_bkgsub_sigma.fits, _priorsub_bkgsub_masked_sigma.fits, _priorsub_bkgsub_resid_sigma.fits 
+# _bkg.fits, _rms.fits, _priorsub_resid_bkg.fits, _priorsub_resid_rms.fits
 
 
-    print(f"Processing: {savenm_str}")
-
-    n, bin_centers, binss, gu = fit_hists(image,nsig=nsig,stdev=stdev)
 
     plot_distribution(
-        n, 
-        bin_centers, 
-        binss, 
-        gu,
-        stdev=stdev,
-        mean_rms=mean_rms, 
-        mean_bkg=mean_bkg, 
-        title=savenm_str, 
-        sigma=sigma,
+        imstring,
         savenm=imstring)
 
 
