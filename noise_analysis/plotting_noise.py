@@ -86,7 +86,7 @@ def plot_distribution(imstring, stdev=1.0, nsig=5., mean_rms=1.0, mean_bkg=0., s
         tgu_im_resid_gd.stddev.value = mean_rms
 
 
-    print("calculated distributions, plotting now...")
+    print(f"calculated distributions, plotting for {imstring} now...")
 
     if args.compare is True: 
         fig = plt.figure(figsize=(19*cm, 12.4*cm))
@@ -125,19 +125,19 @@ def plot_distribution(imstring, stdev=1.0, nsig=5., mean_rms=1.0, mean_bkg=0., s
     ax3.plot(np.linspace(xmin,xmax,1000),tgu_im_resid(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
 
     if args.compare is True: 
-        ax4.bar(bin_centers_im_gd, n_im_gd, color = 'C6', edgecolor = "none", width=(bins_im_gd[1]-bins_im_gd[0]),alpha=0.5) 
+        ax4.bar(bin_centers_im_gd, n_im_gd, color = 'C4', edgecolor = "none", width=(bins_im_gd[1]-bins_im_gd[0]),alpha=0.5) 
         ax4.plot(np.linspace(xmin,xmax,1000),gu_im_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
         ax4.set_title(f"New bkg subtracted, S/N image", fontsize=7)
         ax4.set_ylim([1.0,1.2*max(n_im_gd)])
         ax4.plot(np.linspace(xmin,xmax,1000),tgu_im_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
 
-        ax5.bar(bin_centers_im_mask_gd, n_im_mask_gd, color = 'C6', edgecolor = "none", width=(bins_im_mask_gd[1]-bins_im_mask_gd[0]),alpha=0.5) 
+        ax5.bar(bin_centers_im_mask_gd, n_im_mask_gd, color = 'C4', edgecolor = "none", width=(bins_im_mask_gd[1]-bins_im_mask_gd[0]),alpha=0.5) 
         ax5.set_ylim([1.0,1.2*max(n_im_mask_gd)])
         ax5.set_title(f"New bkg subtracted, $>5\sigma$ sources masked", fontsize=7)
         ax5.plot(np.linspace(xmin,xmax,1000),gu_im_mask_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
         ax5.plot(np.linspace(xmin,xmax,1000),tgu_im_mask_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
         
-        ax6.bar(bin_centers_im_resid_gd, n_im_resid_gd, color = 'C6', edgecolor = "none", width=(bins_im_resid_gd[1]-bins_im_resid_gd[0]),alpha=0.5) 
+        ax6.bar(bin_centers_im_resid_gd, n_im_resid_gd, color = 'C4', edgecolor = "none", width=(bins_im_resid_gd[1]-bins_im_resid_gd[0]),alpha=0.5) 
         ax6.plot(np.linspace(xmin,xmax,1000),gu_im_resid_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
         ax6.set_ylim([1.0,1.2*max(n_im_resid_gd)])
         ax6.set_title(f"$>5\sigma$ sources and new bkg subtracted", fontsize=7)
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     imstring = args.imagenm.split(".")[0]
-    savenm_str = imstring.split("_")[1:]
+    savenm_str = imstring.split("_")[-1]
 
 # Image names I'll need: 
 # _bkgsub_sigma.fits, _bkgsub_masked_sigma.fits, _bkgsub_resid_sigma.fits
@@ -204,6 +204,6 @@ if __name__ == "__main__":
 
     plot_distribution(
         imstring,
-        savenm=imstring)
+        savenm=savenm_str)
 
 

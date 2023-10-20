@@ -34,7 +34,7 @@ out = sys.argv[2]
 # Visually, image quality is much lower past 190, probably because of Cen A
 # So let's go with 60 to 195 = 4h to 13h
 
-ramin = 95
+ramin = 100
 ramax = 310
 decmax = 30
 
