@@ -281,8 +281,8 @@ def fit_models(info):
     pl_res_orig = fit_pl(freq, flux, fluxerr)
     cpl_res_orig = fit_cpl(freq, flux, fluxerr)
 
-    pl_res = pl_res_orig
-    #pl_res = None if pl_res_orig is None or pl_res_orig['chi2'] > chi2.ppf(0.99, pl_res_orig['dof']) else pl_res_orig
+    # pl_res = pl_res_orig
+    pl_res = None if pl_res_orig is None or pl_res_orig['chi2'] > chi2.ppf(0.99, pl_res_orig['dof']) else pl_res_orig
     cpl_res = None if cpl_res_orig is None or cpl_res_orig['chi2'] > chi2.ppf(0.99, cpl_res_orig['dof']) else cpl_res_orig
 
     if cpl_res is not None and (np.abs(cpl_res['q']) < 0.2 or np.abs(cpl_res['q'])/cpl_res['q_err'] < 3):
@@ -322,7 +322,23 @@ def create_source_name(row):
 
     return str(coord_src)
 
-def process_catalogue(tab_path, output=None, plot=False, cpus=1, chunksize=16):
+def cut_bad_fits(comb_df):
+
+    bad_pl_inds = np.where(comb_df.pl_chi2 > chi2.ppf(0.99, comb_df.pl_dof))[0]
+
+    comb_df.loc[bad_pl_inds, "pl_norm"] = None
+    comb_df.loc[bad_pl_inds, "pl_alpha"] = None
+    comb_df.loc[bad_pl_inds, "pl_norm_err"] = None
+    comb_df.loc[bad_pl_inds, "pl_alpha_err"] = None
+    comb_df.loc[bad_pl_inds, "pl_chi2"] = None
+    comb_df.loc[bad_pl_inds, "pl_rchi2"] = None
+    comb_df.loc[bad_pl_inds, "pl_dof"] = None
+
+    return comb_df
+
+
+
+def process_catalogue(tab_path, output=None, plot=False, fit_models=True, cpus=1, chunksize=16):
 
     if plot is True:
         if not os.path.exists('SEDs'):
@@ -331,20 +347,22 @@ def process_catalogue(tab_path, output=None, plot=False, cpus=1, chunksize=16):
 
     df = Table.read(tab_path).to_pandas()
     logger.info(f"Read in {tab_path}, contains {len(df)} rows")
+    if fit_models is True:
+        logger.info(f"Starting fits")
+        with Pool(cpus, maxtasksperchild=24) as pool:
+            results =  list(tqdm(pool.imap(fit_models, [dict(idx=i, row=r, plot=plot) for i, r in df.iterrows()], chunksize=chunksize)))
 
-    logger.info(f"Starting fits")
-    with Pool(cpus, maxtasksperchild=24) as pool:
-        results =  list(tqdm(pool.imap(fit_models, [dict(idx=i, row=r, plot=plot) for i, r in df.iterrows()], chunksize=chunksize)))
+        logger.info("Creating results dataframe")
+        res_df = pd.DataFrame(results).set_index('index')
+        logger.info(f'Result set length is {len(res_df)}')
 
-    logger.info("Creating results dataframe")
-    res_df = pd.DataFrame(results).set_index('index')
-    logger.info(f'Result set length is {len(res_df)}')
+        logger.info('Combining dataframes')
+        comb_df = df.join(res_df)
 
-    logger.info('Combining dataframes')
-    comb_df = df.join(res_df)
-
-    logger.info('Creating source name')
-    comb_df['src_name'] = comb_df.apply(create_source_name, axis=1)
+        logger.info('Creating source name')
+        comb_df['src_name'] = comb_df.apply(create_source_name, axis=1)
+    else: 
+        comb_df = cut_bad_fits(df)
 
     logger.info('Counting models')
     pl_count = np.sum(np.isfinite(comb_df.pl_rchi2))
@@ -383,6 +401,7 @@ if __name__ == '__main__':
     parser.add_argument('-c','--cpus', default=1, type=int, help='Number of CPUs to abuse')
     parser.add_argument('--chunksize', default=16, type=int, help='Chunksize used in the multiprocessing. Bigger numbers can be a lot faster. Be cautious of large numbers when plotting. ')
     parser.add_argument('-v', '--verbose', action='store_true', help='More output information')
+    parser.add_argument("-f", "--fit_seds", action="store_true", default=False,help="fit the seds vs just do some quality cuts assuming already fit")
     
     args = parser.parse_args()
 
@@ -393,5 +412,6 @@ if __name__ == '__main__':
         args.table,
         output=args.output,
         plot=args.plot,
+        fit_models=args.fit_seds,
         cpus=args.cpus
     )

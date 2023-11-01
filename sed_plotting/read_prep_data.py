@@ -64,6 +64,7 @@ VARCHANSN = [
 GLEAMX_FREQS = np.array([np.mean([float(i) for i in name.replace('MHz','').split('_')[-2:]]) for name in CHANSN])
 GLEAMX_INT = [f'int_flux_{c}' for c in CHANSN]
 GLEAMX_ERR = [f'err_int_flux_{c}' for c in CHANSN]
+GLEAMX_RMS = [f'local_rms_{c}' for c in CHANSN]
 
 VAR_FREQS = np.array([float(c) for c in VARCHANSN])
 VARY1_INT = [f"S_{c}_yr1" for c in VARCHANSN]
@@ -382,6 +383,11 @@ def get_freq_flux_err(row, freqs=GLEAMX_FREQS, fluxes=GLEAMX_INT, errs = GLEAMX_
     
     # Gleam-x internal flux error
     err_flux = np.sqrt( err_flux ** 2 + (int_flux * internal_scale)**2)
+    if np.nanmean(err_flux) >= 1:
+        logger.debug("This is poorly fit, using rms for errs but watch out.")
+        rms = np.array([row[i] for i in GLEAMX_RMS])
+        err_flux = np.sqrt(rms **2 +(int_flux * internal_scale)**2)
+
         
     if apply_mask:
         if errs == GLEAMX_ERR:
@@ -487,8 +493,13 @@ if __name__ == '__main__':
         catalogue = SkyCoord(df.ref_ra, df.ref_dec, frame="fk5", unit=u.deg)
         if os.path.isfile(args.coord):
             logger.debug(f"Found file of coords, will cross match for all coords ")
-            coords = Table.read(args.coord).to_pandas()
-            cross_coords = SkyCoord(coords.RA, coords.Dec, unit=u.deg)
+            
+            try: 
+                coords = Table.read(args.coord).to_pandas()
+                cross_coords = SkyCoord(coords.RA, coords.Dec, unit=u.deg)
+            except: 
+                coords = pd.read_csv(args.coord, sep=",", header=None)
+                cross_coords = SkyCoord(np.array(coords[0]), np.array(coords[1]), unit=u.deg)
             idxc, idxcatalog, d2d, d3d = catalogue.search_around_sky(cross_coords, 2*u.arcmin)
             plt_inds = idxcatalog 
             logger.debug(f"Found {len(plt_inds)} sources in crossmatch of coords ")
