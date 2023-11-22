@@ -10,3 +10,7 @@ plots/
 sky_coverage/*png 
 sky_coverage/*pdf
 data/
+*reg
+reliability/*fits
+reliability/*dat 
+*dat 
