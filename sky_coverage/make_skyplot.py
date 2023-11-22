@@ -13,6 +13,8 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib import rc
 from astropy.visualization.wcsaxes import Quadrangle
+from matplotlib.colors import LogNorm
+from matplotlib.ticker import LogFormatter 
 # rc('text', usetex=True)
 # rc('font',**{'family':'serif','serif':['serif']})
 
@@ -71,18 +73,20 @@ def unwrap(x):
     return -x
 vunwrap = np.vectorize(unwrap)
 
-im_dr3 = fits.open(f"{data_path}/GLEAMX_DRII_170-231MHz.fits")
+im_dr3 = fits.open(f"{data_path}/GLEAMX_DRII_170-231MHz_rms.fits")
 wcs_dr3 = wcs.WCS(im_dr3[0].header)
 
 
 fig = plt.figure(figsize=(25*cm,20*cm))
 ax = fig.add_subplot(1,1,1,projection=wcs_dr3)
-im = ax.imshow(im_dr3[0].data*1000,origin="lower",vmin = vmin, vmax = vmax,cmap="gnuplot2")
+im = ax.imshow(im_dr3[0].data*1000,origin="lower",cmap="gnuplot2", norm=LogNorm())
 overlay = ax.get_coords_overlay('icrs')
 overlay.grid(color='black', ls='dotted')
-r = Quadrangle((100, -85)*u.deg, -150*u.deg, 115*u.deg,
+r = Quadrangle((96, -40)*u.deg, -140*u.deg, 40*u.deg,
                edgecolor='white', facecolor='none',
                transform=ax.get_transform('fk5'))
+formatter = LogFormatter(10, labelOnlyBase=False) 
+cb = fig.colorbar(im, format=formatter, ax=ax)
 
 ax.add_patch(r)
 lon = ax.coords['dec']
@@ -117,6 +121,11 @@ tmp = [20., 20., 6.5, 6.5]
 x_obs_3 = np.array([hr2rad(x) for x in tmp])
 y_obs_3 = np.radians([-90, 30., 30, -90.])
 
+# Define Brandon region 
+tmp = [21.07, 20.07, 6.4, 6.4]
+x_obs_b = np.array([hr2rad(x) for x in tmp])
+y_obs_b = np.radians([-40, 0., 0, -40.])
+
 # Define DR1
 tmp = [4., 4., 12., 12.]
 x_es = np.array([hr2rad(x) for x in tmp])
@@ -141,23 +150,27 @@ y_obs_5 = np.radians([-32.7, -20.7, -20.7, -32.7])
 fig.savefig(f"{save_path}/dummy.png")
 
 # Observed region
-ax.plot(x_obs_1, y_obs_1, color="C3", alpha=0.1, zorder = -10)
-ax.fill(x_obs_1, y_obs_1, color="C3", alpha=0.1, zorder = -10)
-ax.plot(x_obs_2, y_obs_2, color="C3", alpha=0.1, zorder = -10)
-ax.fill(x_obs_2, y_obs_2, color="C3", alpha=0.1, zorder = -10, label="")
-# DR1
-ax.plot(x_es, y_es, color="C4", alpha=0.3)
-ax.fill(x_es, y_es, color="C4", alpha=0.3, label="DR1", zorder=-10)
+# ax.plot(x_obs_1, y_obs_1, color="C3", alpha=0.1, zorder = -10)
+# ax.fill(x_obs_1, y_obs_1, color="C3", alpha=0.1, zorder = -10)
+# ax.plot(x_obs_2, y_obs_2, color="C3", alpha=0.1, zorder = -10)
+# ax.fill(x_obs_2, y_obs_2, color="C3", alpha=0.1, zorder = -10, label="")
+# # DR1
+# ax.plot(x_es, y_es, color="C4", alpha=0.3)
+# ax.fill(x_es, y_es, color="C4", alpha=0.3, label="DR1", zorder=-10)
 
 # DR2
-ax.plot(x_obs_3, y_obs_3, color="C6", alpha=0.5, zorder = -5)
-ax.fill(x_obs_3, y_obs_3, color="C6", alpha=0.5, zorder = -5, label="This release")
+ax.plot(x_obs_3, y_obs_3, color="C3", alpha=0.1, zorder = -5)
+ax.fill(x_obs_3, y_obs_3, color="C3", alpha=0.1, zorder = -5, label="GLEAM-X DR2")
+
+# Brandon region
+ax.plot(x_obs_b, y_obs_b, color="C6", alpha=0.5, zorder = -5)
+ax.fill(x_obs_b, y_obs_b, color="C6", alpha=0.5, zorder = -5, label="GXDS")
 
 # DR3
 # ax.plot(x_obs_4, y_obs_4, color="C1", alpha=0.3, zorder = -5)
 # ax.fill(x_obs_4, y_obs_4, color="C1", alpha=0.3, zorder = -5, label="Processing")
-ax.plot(x_obs_5, y_obs_5, color="C4", alpha=0.3, zorder = -5)
-ax.fill(x_obs_5, y_obs_5, color="C4", alpha=0.3, zorder = -5)
+# ax.plot(x_obs_5, y_obs_5, color="C4", alpha=0.3, zorder = -5)
+# ax.fill(x_obs_5, y_obs_5, color="C4", alpha=0.3, zorder = -5)
 
 # Plot the Galactic plane
 l = np.arange(0, 360, 3)
@@ -194,7 +207,7 @@ new = ax.set_xticklabels(new_label_list)
 ax.legend()
 
 
-fig.savefig(f"{save_path}/gleamx_coverage_dr2.pdf", dpi=200, pad_inches=0.0, bbox_inches='tight')
+fig.savefig(f"{save_path}/GXDS_coverage.pdf", dpi=200, pad_inches=0.0, bbox_inches='tight')
 
 
 

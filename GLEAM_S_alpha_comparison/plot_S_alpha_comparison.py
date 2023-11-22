@@ -27,14 +27,14 @@ plt.rcParams.update({
 # May need to adjust that last digit
 viridis = cmap.get_cmap('viridis', 1000)
 
-hdu_gx = fits.open(f"{datadir}GLEAMX_DRII_joined_rescaled_comp.fits")
+hdu_gx = fits.open(f"{datadir}GLEAMX_DRII_rescaled_filtered_sedfit.fits")
 gx = hdu_gx[1].data
 
 hdu_gl = fits.open(f"{datadir}GLEAM_downselect.fits")
 gl = hdu_gl[1].data
 
-# ind = np.where(np.logical_not(np.isnan(gx["pl_alpha"])))
-# gx = gx[ind]
+ind = np.where(np.logical_not(np.isnan(gx["pl_alpha"])))
+gx = gx[ind]
 
 ind = np.where(np.logical_not(np.isnan(gl["alpha"])))
 gl = gl[ind]

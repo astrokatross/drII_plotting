@@ -41,7 +41,7 @@ def hist_norm_height(n,bins,const):
    
    return n,new_bins[:-1]
 
-hdu = fits.open(f"{datadir}GLEAMX_DRII_filtered_prime_sedfit.fits")
+hdu = fits.open(f"{datadir}GLEAMX_DRII_rescaled_filtered_sedfit.fits")
 data = hdu[1].data
 w = data['int_flux']/data['local_rms']
 alpha = data['pl_alpha']

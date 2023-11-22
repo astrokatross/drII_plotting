@@ -62,9 +62,9 @@ VARCHANSN = [
     ]
 
 GLEAMX_FREQS = np.array([np.mean([float(i) for i in name.replace('MHz','').split('_')[-2:]]) for name in CHANSN])
-GLEAMX_INT = [f'int_flux_{c}' for c in CHANSN]
-GLEAMX_ERR = [f'err_int_flux_{c}' for c in CHANSN]
-GLEAMX_RMS = [f'local_rms_{c}' for c in CHANSN]
+GLEAMX_INT = [f"int_flux_{c}" for c in CHANSN]
+GLEAMX_ERR = [f"err_int_flux_{c}" for c in CHANSN]
+GLEAMX_RMS = [f"local_rms_{c}" for c in CHANSN]
 
 VAR_FREQS = np.array([float(c) for c in VARCHANSN])
 VARY1_INT = [f"S_{c}_yr1" for c in VARCHANSN]

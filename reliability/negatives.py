@@ -67,10 +67,10 @@ def do_everything(cat_neg_path, cat_pos_path, pos_ra_col='ra', pos_dec_col='dec'
     ## FIND THOSE WITHIN THE CENTRAL REGION
     ##USING MIN RA OF 60 AND MAX 195 AND MIN DEC -32.7 MAX DEC -20.7
 
-    ramin = 100
-    ramax = 310
+    ramin = 90
+    ramax = 320
     decmax = 30
-    decmin = -90
+    decmin = -85
 
     idx = np.where(cat_neg["dec"] < decmax)
     # idx = np.intersect1d(idx, np.where(cat_neg["dec"] > decmin))
@@ -343,10 +343,14 @@ def read_and_plot(cat_neg_path):
     # if you've run before, just to open the ones that you need. 
     print(f"Opening {cat_neg_path}")
     cat_neg = fits.getdata(cat_neg_path, 1) 
-    ramin = 100
+    # ramin = 0
+    # ramax = 330
+    # decmax = 0
+    # decmin = -40
+    ramin = 90
     ramax = 310
     decmax = 30
-    decmin = -90
+    decmin = -85
 
     idx = np.where(cat_neg["dec"] < decmax)
     # idx = np.intersect1d(idx, np.where(cat_neg["dec"] > decmin))
@@ -379,7 +383,7 @@ def read_and_plot(cat_neg_path):
     fig.tight_layout()
     fig.savefig(f"{args.savedir}GLEAMX_neg.png")
 
-    bin_edge = np.linspace(5, 8, 10)
+    bin_edge = np.linspace(5, 11, 9)
     bin_cen = (bin_edge[:-1] + bin_edge[1:]) / 2
 
     hsnr_pos_single = np.histogram(cat_full_good_pos['int_flux']/cat_full_good_pos['local_rms'], bins = bin_edge)
@@ -397,6 +401,7 @@ def read_and_plot(cat_neg_path):
     ax.plot(hsnrhx, 100*(1-(hsnr_neg_single[0]/hsnr_pos_single[0].astype('float64'))), 'b-', label='Single filter')
     ax.set_ylabel('Reliability / \%')
     ax.set_ylim([98.10, 100.10])
+    # ax.axhline(y=100)
     ax.set_xlabel('Signal-to-noise ($S_\mathrm{int} / \sigma$)')
     ax.legend(loc='lower right')
     fig.tight_layout()
@@ -422,12 +427,12 @@ if __name__ == '__main__':
 
     print(args)
 
-    # read_and_plot(args.negative_cat)
-    do_everything(
-        args.negative_cat,
-        args.positive_cat,
-        pos_ra_col=args.pos_ra_col,
-        pos_dec_col=args.pos_dec_col,
-        output_positive=args.output_positive
-    )
+    read_and_plot(args.negative_cat)
+    # do_everything(
+    #     args.negative_cat,
+    #     args.positive_cat,
+    #     pos_ra_col=args.pos_ra_col,
+    #     pos_dec_col=args.pos_dec_col,
+    #     output_positive=args.output_positive
+    # )
 
