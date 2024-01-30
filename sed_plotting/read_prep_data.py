@@ -28,14 +28,16 @@ logger.setLevel(logging.INFO)
 plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
-    "font.size": 10,
-    "axes.titlesize": 10
+    "font.size": 8,
+    "axes.titlesize": 8
 })
 
 x_ticks=[80, 90, 100, 120, 130, 150, 200, 250]
 majorticklength=2.5
 minorticklength=2
 tickwidth=0.5
+cm = 1/2.54
+
 
 REF_NU = 200.
 CHANSN = ['072_080MHz', '080_088MHz', '088_095MHz', '095_103MHz', '103_111MHz', '111_118MHz', '118_126MHz',
@@ -60,11 +62,40 @@ VARCHANSN = [
     "220",
     "227",
     ]
+CHANSN_FINAL = [
+    "076",
+    "084",
+    "092",
+    "099",
+    "107",
+    "115",
+    "122",
+    "130",
+    "143",
+    "151",
+    "158",
+    "166",
+    "174",
+    "181",
+    "189",
+    "197",
+    "204",
+    "212",
+    "220",
+    "227",
+    ]
+
+
 
 GLEAMX_FREQS = np.array([np.mean([float(i) for i in name.replace('MHz','').split('_')[-2:]]) for name in CHANSN])
 GLEAMX_INT = [f"int_flux_{c}" for c in CHANSN]
 GLEAMX_ERR = [f"err_int_flux_{c}" for c in CHANSN]
 GLEAMX_RMS = [f"local_rms_{c}" for c in CHANSN]
+
+GLEAMX_FREQS_FINAL = np.array([float(i) for i in CHANSN_FINAL])
+GLEAMX_INT_FINAL = [f"int_flux_{c}" for c in CHANSN_FINAL]
+GLEAMX_ERR_FINAL = [f"err_int_flux_{c}" for c in CHANSN_FINAL]
+GLEAMX_RMS_FINAL = [f"local_rms_{c}" for c in CHANSN_FINAL]
 
 VAR_FREQS = np.array([float(c) for c in VARCHANSN])
 VARY1_INT = [f"S_{c}_yr1" for c in VARCHANSN]
@@ -101,7 +132,12 @@ class source:
 
 
 def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
-    fig, ax = plt.subplots(1,1)
+    # fig = plt.figure(figsize=(8*cm, 8*cm))
+    fig, ax = plt.subplots(1,1, figsize=(8*cm,5.5*cm))
+
+    # ax = fig.add_axes(111)
+
+
 
     nu = np.geomspace(
         np.min(freq),
@@ -121,33 +157,63 @@ def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
     legend = False
 
     if fit_params is not None:
-        legend = True
-        
+        # legend = True
         if len(fit_params) == 2:
+            
+            fit_p0 = fit_params
+
+            fit_res = curve_fit(power_law, freq, flux, fit_p0,sigma=fluxerr,absolute_sigma=True)
+
+            no_samps = 1000
+            samps = np.random.multivariate_normal(fit_res[0], fit_res[1],size=no_samps).swapaxes(0,1)
+
+            models = power_law(nu[:,None], *samps)
+            q16, q50, q84 = np.percentile(models, [16, 50, 84], axis=1)
 
             ax.plot(
                 nu,
-                power_law(nu, *fit_params),
-                ls='--',
+                q50,
+                lw=0.5,
                 color='hotpink',
-                label=f"Power-law, alpha {fit_params[1]:.3f}"
+                # label=f"Power-law, alpha {fit_params[1]:.3f}"
             )
+            ax.fill_between(nu,q16,q84,alpha=0.3, color="hotpink")
+            ax.text(0.04, 0.125, "Power Law", transform=ax.transAxes,bbox=dict(facecolor="white",alpha=0.8, edgecolor="black",boxstyle="round,pad=0.25"))
+
+
         elif len(fit_params) == 3: 
+            fit_p0 = fit_params
+
+            fit_res = curve_fit(curved_power_law, freq, flux, fit_p0,sigma=fluxerr,absolute_sigma=True)
+
+            no_samps = 1000
+            samps = np.random.multivariate_normal(fit_res[0], fit_res[1],size=no_samps).swapaxes(0,1)
+
+            models = curved_power_law(nu[:,None], *samps)
+            q16, q50, q84 = np.percentile(models, [16, 50, 84], axis=1)
+
             ax.plot(
                 nu,
-                curved_power_law(nu, *fit_params),
-                ls=':',
+                q50,
+                lw=0.5,
                 color='hotpink',
-                label=f'Curved power-law, q {fit_params[2]:.3f}'
+                # label=f"Power-law, alpha {fit_params[1]:.3f}"
             )
+            ax.fill_between(nu,q16,q84,alpha=0.3, color="hotpink")
+            # ax.text(0.315, 0.125, "Curved Power Law", transform=ax.transAxes,bbox=dict(facecolor="white",alpha=0.8, edgecolor="black",boxstyle="round,pad=0.25"))
+            ax.text(0.315, 0.825, "Curved Power Law", transform=ax.transAxes,bbox=dict(facecolor="white",alpha=0.8, edgecolor="black",boxstyle="round,pad=0.25"))
+
     if args.var is not None: 
         src_var_row = search_cat(src_row, args.varcat, search_radius=1.5*u.arcmin)
         if src_var_row.size == 0: 
-            logger.warning("There was no 2013/2014 data for this source, not plotting")
+            logger.warning("There was no crossmatch data for this source, not plotting")
         else: 
-            freq1, flux1, errflux1 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY1_INT, errs = VARY1_RMS, internal_scale=0.03, apply_mask=False)
-            freq2, flux2, errflux2 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY2_INT, errs = VARY2_RMS, internal_scale=0.03, apply_mask=False)
-
+            try:
+                freq1, flux1, errflux1 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY1_INT, errs = VARY1_RMS, internal_scale=0.03, apply_mask=False)
+                freq2, flux2, errflux2 = get_freq_flux_err(src_var_row, freqs=VAR_FREQS, fluxes=VARY2_INT, errs = VARY2_RMS, internal_scale=0.03, apply_mask=False)
+            except: 
+                freq_var, int_flux_var, err_flux_var = get_freq_flux_err(src_var_row, apply_mask = False, internal_scale=0.02)
+            
             if args.var==1:
                 logger.debug("GOING TO PLOT FOR 2013")
                 ax.errorbar(
@@ -174,7 +240,6 @@ def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
                 )  
             elif args.var==0:
                 logger.debug("GOING TO PLOT 2013,2014")
-                
                 ax.errorbar(
                 freq1,
                 flux1,
@@ -194,11 +259,23 @@ def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
                 color="mediumblue",
                 alpha=0.5,
                 label="2014"
-                )  
+                )
+            elif args.var == 3: 
+                ax.errorbar(
+                freq_var,
+                int_flux_var,
+                yerr=err_flux_var,
+                ls='None',
+                marker='.',
+                color="darkviolet",
+                alpha=0.5,
+                )                
 
 
     if legend is True:
         ax.legend()
+
+
     
     coord_src = source(SkyCoord(src_row.ref_ra*u.deg, src_row.ref_dec*u.deg))
     ax.loglog()
@@ -208,16 +285,17 @@ def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
         title=coord_src.tex
     )
     ax.tick_params(
-        axis="both", which="major", direction="in", length=majorticklength, width=tickwidth, pad=5
+        axis="both", which="major", direction="in", length=majorticklength, width=tickwidth, pad=5, labelsize=7
     )
     ax.tick_params(
-        axis="both", which="minor", direction="in", length=minorticklength, width=tickwidth
+        axis="both", which="minor", direction="in", length=minorticklength, width=tickwidth, pad=5, labelsize=7
     )
+    ax.tick_params(axis="x", which="both", pad=5, labelsize=7)
     ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     ax.xaxis.set_minor_formatter(ScalarFormatter(useMathText=True))
     ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     ax.yaxis.set_minor_formatter(ScalarFormatter(useMathText=True))
-    
+
     savenm = str(coord_src)
     savenm = savenm.replace(" ","_")
     fig.tight_layout()
@@ -225,7 +303,7 @@ def plot_sed(freq, flux, fluxerr, fit_params, src_row, outpath):
         fig.savefig(f"{outpath}/{savenm}.png")
     except FileNotFoundError:
         logger.debug(f"Couldnt save the sed because there's no folder: {outpath}, will just save here...")
-        fig.savefig(f"./{savenm}.png")
+        fig.savefig(f"./{savenm}.pdf")
 
     plt.close(fig)
 
@@ -329,8 +407,14 @@ def fit_cpl(freq, flux, err_flux):
             rchi2_cpl = None
             chi2_cpl = None
     except RuntimeError:
-        fit_cpl = None
-        rchi2_cpl = np.inf  
+        best_p_cpl = None
+        rchi2_cpl = np.inf
+        chi2_cpl = np.inf
+    except:
+        print("other issue!?!? ")
+        best_p_cpl = None
+        rchi2_cpl = np.inf
+        chi2_cpl = np.inf
     return best_p_cpl, chi2_cpl, rchi2_cpl
 
 def read_fit_params(row,pl,cpl,try_fit=False):
@@ -437,11 +521,16 @@ def get_freq_flux_err(row, freqs=GLEAMX_FREQS, fluxes=GLEAMX_INT, errs = GLEAMX_
 def search_cat(source, catalogue, search_radius=1*u.arcmin):
 
     target = SkyCoord(src_row.ref_ra*u.deg, src_row.ref_dec*u.deg, frame="icrs")
-    catalogue = Table.read(catalogue)
-    catalogue["RA"] = catalogue["RA"].astype(float)
-    catalogue["Dec"] = catalogue["Dec"].astype(float)
-    catalogue = catalogue.to_pandas()
-    cats = SkyCoord(catalogue.RA, catalogue.Dec, frame="fk5", unit=u.deg)
+    try: 
+        catalogue = Table.read(catalogue)
+        catalogue["RA"] = catalogue["RA"].astype(float)
+        catalogue["Dec"] = catalogue["Dec"].astype(float)
+        catalogue = catalogue.to_pandas()
+        cats = SkyCoord(catalogue.RA, catalogue.Dec, frame="fk5", unit=u.deg)
+    except:
+        catalogue = Table.read(catalogue).to_pandas()
+        cats = SkyCoord(catalogue.ref_ra, catalogue.ref_dec,frame="fk5", unit=u.deg)
+    
     try: 
         distances = target.separation(cats)
         idc = distances <= search_radius

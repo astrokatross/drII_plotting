@@ -4,22 +4,22 @@
 # --------------------  CATALOGUE QUALITY CUTS ---------------------
 # ------------------------------------------------------------------
 
-python reliability/negatives.py \
-	data/GLEAMX_DRII_joined_rescaled_comp.fits \
-	reliability/GLEAMX_DRII_170-231MHz_psf_comp_negative_comp.fits \
-	-r ref_ra \
-	-d ref_dec \
-	-o data/GLEAMX_DRII_rescaled_filtered.fits
+# python reliability/negatives.py \
+# 	data/GLEAMX_DRII_joined_rescaled_comp.fits \
+# 	reliability/GLEAMX_DRII_170-231MHz_psf_comp_negative_comp.fits \
+# 	-r ref_ra \
+# 	-d ref_dec \
+# 	-o data/GLEAMX_DRII_rescaled_filtered.fits
 
 # python catalogue_seds/catalogue_seds.py \
 # 	IDR1_subset_filtered.fits \
 # 	-c 2 -o IDR1_subset_filtered_SEDs.fits
 
-# python catalogue_names/catalogue_names.py \
-#     IDR1_subset_filtered_SEDs.fits
+# python final_cat_prep/catalogue_names.py \
+#     data/GLEAMX_DRII_filtered_prime_sedfit.fits
 
 # python add_ucd/add_ucd.py \
-#     IDR1_subset_filtered_SEDs_paper.fits \
+#     data/GLEAMX_DRII_filtered_prime_sedfit_paper.fits \
 # 	--apply
 
 
@@ -56,3 +56,5 @@ python reliability/negatives.py \
 # python GLEAM_S_alpha_comparison/plot_S_alpha_comparison.py
 
 # python alpha_distribution/plot_alpha.py 
+
+python image_comparison/mosaic_plot.py 

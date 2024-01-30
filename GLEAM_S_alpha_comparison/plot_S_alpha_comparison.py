@@ -10,8 +10,8 @@ import numpy as np
 from scipy.stats import gaussian_kde
 
 cm = 1/2.54
-datadir="data/"
-savedir="plots/"
+datadir="./data/"
+savedir="./plots/"
 def S(nu, nu0, S0, alpha):
    return S0 * (nu/nu0)**alpha
 
@@ -21,13 +21,13 @@ def trueS(S0, q, r):
 plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
-    "font.size": 8}
+    "font.size": 9}
 )
 
 # May need to adjust that last digit
 viridis = cmap.get_cmap('viridis', 1000)
 
-hdu_gx = fits.open(f"{datadir}GLEAMX_DRII_rescaled_filtered_sedfit.fits")
+hdu_gx = fits.open(f"{datadir}GLEAMX_DRII_filtered_prime_sedfit.fits")
 gx = hdu_gx[1].data
 
 hdu_gl = fits.open(f"{datadir}GLEAM_downselect.fits")
@@ -75,7 +75,7 @@ if makeSr is True:
     ymax = 2.1
     ratio_error = np.sqrt((glm["err_int_flux_wide"]/glm["int_flux_wide"])**2 + (gxm["err_int_flux"]/gxm["int_flux"])**2)
 
-    fig = plt.figure(figsize=(8*cm,8*cm))
+    fig = plt.figure(figsize=(8.9*cm,8*cm))
     ax = fig.add_axes([0.2,0.2,0.79,0.79])
 
     #ax.set_ylabel("$\frac{S_\mathrm{200MHz,fitted,GLEAM}}{S_\mathrm{200MHz,fitted,GLEAM-X}}$")
@@ -111,7 +111,7 @@ if makeSr is True:
     x = gxm["int_flux"]/gxm["local_rms"]
     #x = gxm["int_flux_N_147_154MHz"]#/gxm["local_rms"]
     #ax.scatter(x, y, zorder = 1, color="k", marker=".", alpha=0.5)#, ls="-")
-    ax.hexbin(x, y, xscale="log", yscale="log", bins="log", zorder = 1, lw=0.2, cmap="binary")#, color="k", marker=".", alpha=0.5)#, ls="-")
+    ax.hexbin(x, y, xscale="log", yscale="log", bins="log", zorder = 1, lw=0.2, cmap="gnuplot2")#, color="k", marker=".", alpha=0.5)#, ls="-")
 #    ax.hexbin(x, ratio_error, xscale="log", yscale="log", bins="log", zorder = 2, lw=0.2, cmap="viridis")#, color="k", marker=".", alpha=0.5)#, ls="-")
 #    for n in noise_ratios:
         #noise_ratio = (4.5/1.2)
@@ -136,7 +136,7 @@ if makeS is True:
     # Dummy x for f(x)
     x = np.arange(xmin, xmax+10)
 
-    fig = plt.figure(figsize=(8*cm,8*cm))
+    fig = plt.figure(figsize=(8.9*cm,8*cm))
     ax = fig.add_axes([0.1,0.1,0.8,0.8])
     ax.set_aspect("equal")
     ax.set_xlabel("GLEAM $S_\mathrm{200MHz,fitted}$ / Jy")
@@ -168,14 +168,14 @@ if makeS is True:
 
     fig.savefig(f"{savedir}GLEAM-X_GLEAM_S200_comparison.pdf", bbox_inches="tight",overwrite=True)
 
-makeAlpha = False
+makeAlpha = True
 if makeAlpha is True:
     xmin = -2.5
     xmax = 2.5
     # Dummy alpha
     x = np.arange(xmin, xmax+0.1)
 
-    fig = plt.figure(figsize=(8*cm,8*cm))
+    fig = plt.figure(figsize=(8.9*cm,8*cm))
     ax = fig.add_axes([0.1,0.1,0.8,0.8])
     ax.set_aspect("equal")
     ax.set_xlabel("GLEAM $\\alpha_\mathrm{fitted}$")
@@ -196,11 +196,19 @@ if makeAlpha is True:
 
     # Have to do this in a loop because of reasons...
     # https://github.com/matplotlib/matplotlib/issues/16317
-    for xp, yp, xerrp, yerrp, zp in zip(x, y, xerr, yerr, z):
-        ax.errorbar(xp, yp, xerr = xerrp, yerr = yerrp, fmt="none", elinewidth = 0.5, lw=0, zorder=zp, ecolor = viridis(zp))
-        ax.scatter(xp, yp, marker=".", color = viridis(zp), s = 2, zorder=zp)
+    # for xp, yp, xerrp, yerrp, zp in zip(x, y, xerr, yerr, z):
+    #     ax.errorbar(xp, yp, xerr = xerrp, yerr = yerrp, fmt="none", elinewidth = 0.5, lw=0, zorder=zp, ecolor = viridis(zp))
+        # ax.scatter(xp, yp, marker=".", color = viridis(zp), s = 2, zorder=zp)
+    median_xerr= np.nanmedian(xerr)
+    median_yerr= np.nanmedian(yerr)
+    cmap=plt.cm.gnuplot2
+
+    ax.errorbar(2, -2, xerr = median_xerr, yerr = median_yerr, fmt="none", elinewidth = 0.5, lw=0,color=cmap(0.1))
+    hb = ax.hexbin(x, y, bins='log', cmap="gnuplot2",mincnt=1)
+    cb = fig.colorbar(hb, ax=ax, label="log10(N)",fraction=0.045, pad=0.05)
+    
 
 #    ax.xaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:g}'.format(y)))
 #    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:g}'.format(y)))
 
-    fig.savefig(f"{savedir}GLEAM-X_GLEAM_alpha_comparison.pdf", bbox_inches="tight",overwrite=True)
+    fig.savefig(f"{savedir}GLEAM-X_GLEAM_alpha_comparison.pdf", bbox_inches="tight")

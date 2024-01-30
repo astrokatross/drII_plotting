@@ -21,9 +21,10 @@ plt.rcParams.update({
     "font.family": "serif",
     "font.size": 8}
 )
-datadir="data/"
-savedir="plots/"
+datadir="./data/"
+savedir="./plots/"
 cm = 1/2.54
+cmap=plt.cm.gnuplot2
 
 def iqr(x):
     q75, q25 = np.percentile(x, [75 ,25])
@@ -41,7 +42,9 @@ def hist_norm_height(n,bins,const):
    
    return n,new_bins[:-1]
 
-hdu = fits.open(f"{datadir}GLEAMX_DRII_rescaled_filtered_sedfit.fits")
+
+
+hdu = fits.open(f"{datadir}GLEAMX_DRII_filtered_prime_sedfit.fits")
 data = hdu[1].data
 w = data['int_flux']/data['local_rms']
 alpha = data['pl_alpha']
@@ -75,20 +78,20 @@ n_1, bins_1 = hist_norm_height(n_1,bins_1,max(n_1))
 # g = fit_g(g_init, n, bins)
 fig = plt.figure(figsize=(8*cm,8*cm))
 ax = fig.add_subplot(111)
-patch_dim, = ax.step(bins_dim, n_dim, color = 'c',linewidth = 3)
-patch_br, = ax.step(bins, n, color = 'k',linewidth = 2)
-patch_05, = ax.step(bins_05, n_05, color = 'blue',linewidth = 1)
-patch_1, = ax.step(bins_1, n_1, color = 'red',linewidth = 0.5)
+patch_dim, = ax.step(bins_dim, n_dim, color = cmap(0.1),linewidth = 3)
+patch_br, = ax.step(bins, n, color = cmap(0.25) ,linewidth = 2)
+patch_05, = ax.step(bins_05, n_05, color = cmap(0.5),linewidth = 1)
+patch_1, = ax.step(bins_1, n_1, color = cmap(0.7),linewidth = 0.5)
 ax.set_xlabel(r'$\alpha$')
 ax.set_ylabel('Normalised count')
 ax.set_xlim([-2.5,1.0])
 ax.set_ylim([0,1.1])
 ax.tick_params(axis="both", which="both")
 #ax.set_title('Distribution of spectral indices in GLEAM')
-ax.axvline(np.median(alpha_dim), color='c', linestyle='--', lw=0.5)
-ax.axvline(np.median(alpha_bright), color='k', linestyle='--', lw=0.5)
-ax.axvline(np.median(alpha_bright_05), color='blue', linestyle='--', lw=0.5)
-ax.axvline(np.median(alpha_bright_1), color='red', linestyle='--', lw=0.5)
+ax.axvline(np.median(alpha_dim), color=cmap(0.1), linestyle='--', lw=0.5)
+ax.axvline(np.median(alpha_bright), color=cmap(0.25), linestyle='--', lw=0.5)
+ax.axvline(np.median(alpha_bright_05), color=cmap(0.5), linestyle='--', lw=0.5)
+ax.axvline(np.median(alpha_bright_1), color=cmap(0.7), linestyle='--', lw=0.5)
 
 lg = ax.legend([patch_dim,patch_br,patch_05,patch_1], ["$S_\mathrm{200 MHz} \leq 10$\,mJy","$10\,\mathrm{mJy} \leq S_\mathrm{200 MHz}<50$\,mJy","$50\,\mathrm{mJy} \leq S_\mathrm{200 MHz}<200$\,mJy","$S_\mathrm{200 MHz} \geq 200$\,mJy"], bbox_to_anchor=(0.1,1.3), loc="upper left")
 #lg = ax.legend([patch_br,patch_05,patch_1], ["$0.16\,\mathrm{Jy} \leq S_\mathrm{200 MHz}<0.5$\,Jy","$0.5\,\mathrm{Jy} \leq S_\mathrm{200 MHz}<1.0$\,Jy","$S_\mathrm{200 MHz} \geq 1.0$\,Jy"])

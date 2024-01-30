@@ -383,7 +383,7 @@ def read_and_plot(cat_neg_path):
     fig.tight_layout()
     fig.savefig(f"{args.savedir}GLEAMX_neg.png")
 
-    bin_edge = np.linspace(5, 11, 9)
+    bin_edge = np.linspace(4, 11, 9)
     bin_cen = (bin_edge[:-1] + bin_edge[1:]) / 2
 
     hsnr_pos_single = np.histogram(cat_full_good_pos['int_flux']/cat_full_good_pos['local_rms'], bins = bin_edge)
@@ -394,11 +394,11 @@ def read_and_plot(cat_neg_path):
 
     # This just calcuates the bin centers for easy plotting
     hsnrhx = (hsnr_neg_single[1][1:]+hsnr_neg_single[1][:-1])/2
-
-    fig = plt.figure(figsize = (8*cm, 8*cm))
+    cmap=plt.cm.gnuplot2
+    fig = plt.figure(figsize = (8.9*cm, 8*cm))
     ax = fig.add_subplot(111)
-    ax.plot(hsnrhx, 100*(1-(hsnr_neg_double[0]/hsnr_pos_single[0].astype('float64'))), 'r-', label='Both filters')
-    ax.plot(hsnrhx, 100*(1-(hsnr_neg_single[0]/hsnr_pos_single[0].astype('float64'))), 'b-', label='Single filter')
+    ax.plot(hsnrhx, 100*(1-(hsnr_neg_double[0]/hsnr_pos_single[0].astype('float64'))), color=cmap(0.1), label='Both filters')
+    ax.plot(hsnrhx, 100*(1-(hsnr_neg_single[0]/hsnr_pos_single[0].astype('float64'))), color=cmap(0.5), label='Single filter')
     ax.set_ylabel('Reliability / \%')
     ax.set_ylim([98.10, 100.10])
     # ax.axhline(y=100)

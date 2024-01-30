@@ -32,11 +32,9 @@ def read_flux():
 
     return 
 
-def fit_model(freqs, flux, flux_err, model=read_prep_data.power_law):
-    if model == read_prep_data.power_law:
-# def fit_pl(freq, flux, fluxerr):
-        p0 = (np.median(flux), -0.8)
-
+def fit_model(freqs, flux, flux_err, p0=None, model=read_prep_data.power_law):
+    # TODO: need some way to calculate default p0... 
+    if p0 is not None:
         try:
             fit_res = curve_fit(
                 model,
@@ -47,61 +45,29 @@ def fit_model(freqs, flux, flux_err, model=read_prep_data.power_law):
                 absolute_sigma=True
             )
         except RuntimeError:
-            return None
-
-        best_p, covar = fit_res
-        err_p = np.sqrt(np.diag(covar))
-        dof = len(freqs) - 2
-        chi2 = np.sum(
-            ((flux - model(freqs, *best_p)) / flux_err)**2
-            )
-        rchi2 = chi2 / dof
-
-        return dict(
-            norm=best_p[0], 
-            alpha=best_p[1],
-            norm_err=err_p[0],
-            alpha_err = err_p[1],
-            chi2=chi2,
-            rchi2=rchi2,
-            dof=dof
-            )
-    elif model == read_prep_data.curved_power_law:
-        p0 = (np.median(flux), -0.8, 0)
-
+            return None, np.inf, np.inf
+    else: 
         try:
             fit_res = curve_fit(
-                read_prep_data.curved_power_law,
+                model,
                 freqs,
                 flux,
-                p0=p0,
                 sigma=flux_err,
                 absolute_sigma=True
             )
         except RuntimeError:
-            return None
+            return None, np.inf, np.inf
+    best_p, covar = fit_res
+    err_p = np.sqrt(np.diag(covar))
+    dof = len(freqs) - 2
+    chi2 = np.sum(
+        ((flux - model(freqs, *best_p)) / flux_err)**2
+        )
+    rchi2 = chi2 / dof
 
-        best_p, covar = fit_res
-        err_p = np.sqrt(np.diag(covar))
-        dof = len(freqs) - 3
-        chi2 = np.sum(
-            ((flux - read_prep_data.curved_power_law(freqs, *best_p)) / flux_err)**2
-            )
-        rchi2 = chi2 / dof
-        return dict(
-            norm=best_p[0], 
-            alpha=best_p[1],
-            q=best_p[2],
-            norm_err=err_p[0],
-            alpha_err = err_p[1],
-            q_err=err_p[2],
-            chi2=chi2,
-            rchi2=rchi2,
-            dof=dof
-            )
-    else: 
-        logger.warning("Dunno what you want to fit cause I was lazy and only set up too.... plz give more details for model fitting")
-        return np.nan 
+    return best_p, chi2, rchi2
+
+
 
 def calc_confidence_curve(popt, perr, nstd, freqs=np.linspace(70,1400,1000), model=sed_models.powlaw):
 

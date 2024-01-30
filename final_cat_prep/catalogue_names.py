@@ -198,9 +198,9 @@ def priorized_catalogue_lookup(col: str) -> str:
             prior_prefix = PAPER_TO_PRIOR_NAMES[paper_prefix]
             
             if paper_freq in ['W_087', 'W_118', 'W_154', 'W_185', 'W_215']:
-                mapped_col = f"{prior_prefix}_W_{prior_freq.replace('-','_')}MHz"
+                mapped_col = f"{prior_prefix}_{prior_freq.replace('-','_')}MHz"
             elif paper_freq != 'wide':
-                mapped_col = f"{prior_prefix}_N_{prior_freq.replace('-','_')}MHz"
+                mapped_col = f"{prior_prefix}_{prior_freq.replace('-','_')}MHz"
             else:
                 mapped_col = f"{prior_prefix}"
 

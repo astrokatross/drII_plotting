@@ -25,6 +25,8 @@ fit_g = fitting.LevMarLSQFitter()
 # note: stdev=1, nsig=5 --> sigma
 # stdev=0.025/0.002, nsig=1 --> raw
 
+
+
 def fit_hists(data, stdev = 1.0, nsig=5):
     bins=100
     xmin = -nsig*stdev
@@ -89,7 +91,7 @@ def plot_distribution(imstring, stdev=1.0, nsig=5., mean_rms=1.0, mean_bkg=0., s
     print(f"calculated distributions, plotting for {imstring} now...")
 
     if args.compare is True: 
-        fig = plt.figure(figsize=(19*cm, 12.4*cm))
+        fig = plt.figure(figsize=(20*cm, 14*cm))
         gs = fig.add_gridspec(2,3, wspace=0.2,hspace=0.4)
         ax1 = fig.add_subplot(gs[0,0])
         ax2 = fig.add_subplot(gs[0,1])
@@ -99,7 +101,7 @@ def plot_distribution(imstring, stdev=1.0, nsig=5., mean_rms=1.0, mean_bkg=0., s
         ax6 = fig.add_subplot(gs[1,2])
         axes_total = [ax1, ax2, ax3, ax4, ax5, ax6]
     else: 
-        fig = plt.figure(figsize=(19*cm, 6.2*cm))
+        fig = plt.figure(figsize=(17.9*cm, 6*cm))
         gs = fig.add_gridspec(1,3, wspace=0.2)
         ax1 = fig.add_subplot(gs[0,0])
         ax2 = fig.add_subplot(gs[0,1])
@@ -110,37 +112,37 @@ def plot_distribution(imstring, stdev=1.0, nsig=5., mean_rms=1.0, mean_bkg=0., s
     ax1.plot(np.linspace(xmin,xmax,1000),gu_im(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
     ax1.plot(np.linspace(xmin,xmax,1000),tgu_im(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
     ax1.set_ylim([1.0,1.2*max(n_im)])
-    ax1.set_title(f"Bkg subtracted, S/N image", fontsize=7)
+    ax1.set_title(f"Bkg subtracted S/N image" )
 
     ax2.bar(bin_centers_im_mask, n_im_mask, color = 'C6', edgecolor = "none", width=(bins_im_mask[1]-bins_im_mask[0]),alpha=0.5) 
     ax2.plot(np.linspace(xmin,xmax,1000),gu_im_mask(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
     ax2.set_ylim([1.0,1.2*max(n_im_mask)])
-    ax2.set_title(f"Bkg subtracted, $>5\sigma$ sources masked", fontsize=7)
+    ax2.set_title(f"$>5\sigma$ Sources masked; bkg subtracted" )
     ax2.plot(np.linspace(xmin,xmax,1000),tgu_im_mask(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
 
     ax3.bar(bin_centers_im_resid, n_im_resid, color = 'C6', edgecolor = "none", width=(bins_im_resid[1]-bins_im_resid[0]),alpha=0.5) 
     ax3.plot(np.linspace(xmin,xmax,1000),gu_im_resid(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
     ax3.set_ylim([1.0,1.2*max(n_im_resid)])
-    ax3.set_title(f"$>5\sigma$ Sources and bkg subtrackted ", fontsize=7)
+    ax3.set_title(f"$>5\sigma$ Sources and bkg subtracted" )
     ax3.plot(np.linspace(xmin,xmax,1000),tgu_im_resid(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
 
     if args.compare is True: 
         ax4.bar(bin_centers_im_gd, n_im_gd, color = 'C4', edgecolor = "none", width=(bins_im_gd[1]-bins_im_gd[0]),alpha=0.5) 
         ax4.plot(np.linspace(xmin,xmax,1000),gu_im_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
-        ax4.set_title(f"New bkg subtracted, S/N image", fontsize=7)
+        ax4.set_title(f"New bkg subtracted S/N image" )
         ax4.set_ylim([1.0,1.2*max(n_im_gd)])
         ax4.plot(np.linspace(xmin,xmax,1000),tgu_im_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
 
         ax5.bar(bin_centers_im_mask_gd, n_im_mask_gd, color = 'C4', edgecolor = "none", width=(bins_im_mask_gd[1]-bins_im_mask_gd[0]),alpha=0.5) 
         ax5.set_ylim([1.0,1.2*max(n_im_mask_gd)])
-        ax5.set_title(f"New bkg subtracted, $>5\sigma$ sources masked", fontsize=7)
+        ax5.set_title(f"$>5\sigma$ Sources masked; new bkg subtracted" )
         ax5.plot(np.linspace(xmin,xmax,1000),gu_im_mask_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
         ax5.plot(np.linspace(xmin,xmax,1000),tgu_im_mask_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
         
         ax6.bar(bin_centers_im_resid_gd, n_im_resid_gd, color = 'C4', edgecolor = "none", width=(bins_im_resid_gd[1]-bins_im_resid_gd[0]),alpha=0.5) 
         ax6.plot(np.linspace(xmin,xmax,1000),gu_im_resid_gd(np.linspace(xmin,xmax,1000)), color='k',lw=0.5, alpha=0.8, label='Fitted')
         ax6.set_ylim([1.0,1.2*max(n_im_resid_gd)])
-        ax6.set_title(f"$>5\sigma$ sources and new bkg subtracted", fontsize=7)
+        ax6.set_title(f"$>5\sigma$ Sources and new bkg subtracted" )
         ax6.plot(np.linspace(xmin,xmax,1000),tgu_im_resid_gd(np.linspace(xmin,xmax,1000)), color='k',lw=1, linestyle="--", label='BANE')
 
     for ax in axes_total:

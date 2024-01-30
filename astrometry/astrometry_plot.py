@@ -17,7 +17,7 @@ from matplotlib.ticker import FuncFormatter
 plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
-    "font.size": 8}
+    "font.size": 10}
 )
 #    "font.sans-serif": ["Helvetica"]}
 # Good for making a png for talks
@@ -63,8 +63,8 @@ def inspect_astrometry(gleam_sky, ref_sky, plot_output=None, info=None):
     if plot_output is not None:
         logger.info(f"Creating {plot_output} plot")
 
-        x_lim = [-2,2]
-        y_lim = [-2,2]
+        x_lim = [-3,3]
+        y_lim = [-3,3]
         
         x_mask = (x_lim[0] < x) & (x <= x_lim[1])
         y_mask = (y_lim[0] < y) & (y <= y_lim[1])
@@ -73,7 +73,7 @@ def inspect_astrometry(gleam_sky, ref_sky, plot_output=None, info=None):
         x = x[mask]
         y = y[mask]
         
-        fig, ax2 = plt.subplots(1,1, figsize=(8*cm,8*cm))
+        fig, ax2 = plt.subplots(1,1, figsize=(10*cm,8*cm))
 
         xy = np.vstack([x, y])
 
@@ -84,13 +84,16 @@ def inspect_astrometry(gleam_sky, ref_sky, plot_output=None, info=None):
         y = y[idx]
         z = z[idx]
 
-        ax2.scatter(
-            x,
-            y,
-            marker='o',
-            s=2,
-            c=z
-        )
+        hb = ax2.hexbin(x,y,gridsize=50, cmap="gnuplot2", bins='log', linewidths=0.1, mincnt=1)
+        cb=fig.colorbar(hb, ax=ax2,label="log10(N)",fraction=0.045, pad=0.05)
+
+        # ax2.scatter(
+        #     x,
+        #     y,
+        #     marker='o',
+        #     s=2,
+        #     c=z
+        # )
         ax2.grid(which='both')
         x_median = np.median(x)
         y_median = np.median(y)
@@ -108,11 +111,11 @@ def inspect_astrometry(gleam_sky, ref_sky, plot_output=None, info=None):
         ax_right = divider.append_axes('right', size='15%', pad='4%', sharey=ax2)
 
         b = ax_top.hist(
-            x, bins=30
+            x, bins=30,color=plt.cm.gnuplot2(0.5)
         )
 
         b = ax_right.hist(
-            y, bins=30, orientation='horizontal'
+            y, bins=30, orientation='horizontal', color=plt.cm.gnuplot2(0.5)
         )
 
         ax_top.axvline(x_median, ls='--', color='black')
