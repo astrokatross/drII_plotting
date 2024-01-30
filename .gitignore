@@ -14,3 +14,11 @@ data/
 reliability/*fits
 reliability/*dat 
 *dat 
+completeness/pawsey_everything/*
+completeness/*.txt 
+completeness/*.fits
+completeness/*.pdf 
+sed_plotting/__pycache__/
+sed_plotting/*pkl
+sed_plotting/*txt
+
